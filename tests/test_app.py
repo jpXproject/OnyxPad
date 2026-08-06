@@ -231,3 +231,49 @@ def test_zoom_actions(app_window):
     assert ed.zoom_level() >= 0
     app_window._zoom_reset()
     assert ed.font().pointSize() == app_window._font_size
+
+
+# --------------------------------------------------------------- help
+def test_help_menu_has_repo_author_and_update(app_window):
+    """Menu Bantuan memuat tautan repo/author dan item cek pembaruan."""
+    texts = []
+    for act in app_window.menuBar().actions():
+        menu = act.menu()
+        if menu is not None:
+            for a in menu.actions():
+                texts.append(a.text())
+    assert "Repositori GitHub" in texts
+    assert "Author: jpXCode" in texts
+    assert "Cek Pembaruan…" in texts
+
+
+def test_show_about_mentions_repo_and_author(app_window, monkeypatch):
+    """Dialog Tentang memuat versi, URL repo, dan nama author."""
+    captured = {}
+
+    def fake_about(parent, title, text):
+        captured["title"] = title
+        captured["text"] = text
+
+    monkeypatch.setattr(app_module.QMessageBox, "about",
+                        staticmethod(fake_about))
+    app_window.show_about()
+    assert "Tentang" in captured["title"]
+    assert "github.com" in captured["text"]
+    assert "jpXCode" in captured["text"]
+
+
+def test_help_menu_opens_repo_url(app_window, monkeypatch):
+    """Item 'Repositori GitHub' membuka URL repo (tanpa browser asli)."""
+    opened = []
+    monkeypatch.setattr(app_module, "QDesktopServices",
+                        type("Fake", (object,), {
+                            "openUrl": staticmethod(
+                                lambda url: opened.append(url.toString()))}))
+    for act in app_window.menuBar().actions():
+        menu = act.menu()
+        if menu is not None and act.text() == "Bantuan":
+            for a in menu.actions():
+                if a.text() == "Repositori GitHub":
+                    a.trigger()
+    assert opened and "github.com" in opened[0]

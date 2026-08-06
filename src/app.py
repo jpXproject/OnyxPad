@@ -4,8 +4,10 @@ import json
 import os
 from pathlib import Path
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QFontDatabase, QIcon, QKeySequence
+from PySide6.QtCore import Qt, QTimer, QUrl
+from PySide6.QtGui import QDesktopServices, QFontDatabase, QIcon, QKeySequence
+from PySide6.QtNetwork import (QNetworkAccessManager, QNetworkReply,
+                               QNetworkRequest)
 from PySide6.QtWidgets import (QApplication, QDialog, QDockWidget, QFileDialog,
                                QHBoxLayout, QInputDialog, QLabel, QLineEdit,
                                QListWidget, QMainWindow, QMessageBox,
@@ -17,7 +19,9 @@ from .panes import SplitManager
 from .search import SearchBar
 from .syntax import LANG_NAMES
 from .themes import THEMES, THEME_ORDER, build_qss
-from .version import APP_ID, APP_NAME, APP_TAGLINE, APP_VERSION
+from .version import (APP_AUTHOR, APP_AUTHOR_URL, APP_ID, APP_NAME,
+                      APP_RELEASES_API, APP_REPO_URL, APP_TAGLINE,
+                      APP_VERSION, is_newer_version)
 
 APP_DIR = Path(__file__).resolve().parent.parent
 ICON_PATH = APP_DIR / "favicon.ico"
@@ -69,6 +73,10 @@ class OnyxPad(QMainWindow):
         self._refresh_status()
         self.statusBar().showMessage(
             f"{APP_NAME} v{APP_VERSION} — {APP_TAGLINE}", 4000)
+        self._update_manual = True
+        self._net = QNetworkAccessManager(self)
+        self._net.finished.connect(self._on_release_check)
+        QTimer.singleShot(2500, lambda: self.check_for_updates(manual=False))
         self.setAcceptDrops(True)
 
     # ================================================================ UI
@@ -207,6 +215,15 @@ class OnyxPad(QMainWindow):
         m_help = mb.addMenu("Bantuan")
         self._add(m_help, "Pintasan Keyboard", self.show_shortcuts, "F1")
         self._add(m_help, f"Tentang {APP_NAME}", self.show_about)
+        m_help.addSeparator()
+        # lambda agar arg 'checked' dari sinyal tidak menimpa manual=True
+        self._add(m_help, "Cek Pembaruan…",
+                  lambda _checked=False: self.check_for_updates(manual=True))
+        m_help.addSeparator()
+        self._add(m_help, "Repositori GitHub",
+                  lambda: self._open_url(APP_REPO_URL))
+        self._add(m_help, f"Author: {APP_AUTHOR}",
+                  lambda: self._open_url(APP_AUTHOR_URL))
 
     def _add(self, menu, label, slot, shortcut=None):
         act = menu.addAction(label, slot)
@@ -527,7 +544,63 @@ class OnyxPad(QMainWindow):
             "bertingkat gaya tmux/VS Code, dibangun dengan PySide6 (Qt6).</p>"
             "<p>Fitur: split kanan/bawah, tab per pane, syntax highlighting "
             "multi-bahasa, find &amp; replace, 7 tema, multi-kursor, sesi "
-            "otomatis, dan penjelajah folder.</p>")
+            "otomatis, dan penjelajah folder.</p>"
+            f"<p>Open source: <a href=\"{APP_REPO_URL}\">{APP_REPO_URL}</a><br>"
+            f"Author: <a href=\"{APP_AUTHOR_URL}\">{APP_AUTHOR}</a> — "
+            "buka tautan lewat menu Bantuan.</p>")
+
+    # ============================================================ updates
+    def _open_url(self, url):
+        QDesktopServices.openUrl(QUrl(url))
+
+    def check_for_updates(self, manual=True):
+        """Cek rilis terbaru di GitHub (async — tidak memblokir UI)."""
+        req = QNetworkRequest(QUrl(APP_RELEASES_API))
+        req.setRawHeader(b"User-Agent", b"OnyxPad")
+        req.setRawHeader(b"Accept", b"application/vnd.github+json")
+        reply = self._net.get(req)
+        # simpan bendera per-request agar jawaban yang terlambat tidak
+        # menimpa perilaku cek manual (hindari race antar permintaan)
+        reply.setProperty("manual", manual)
+
+    def _on_release_check(self, reply):
+        manual = bool(reply.property("manual") or True)
+        if reply.error() == QNetworkReply.NetworkError.NoError:
+            try:
+                data = json.loads(bytes(reply.readAll()).decode("utf-8"))
+                tag = data.get("tag_name", "")
+                if is_newer_version(APP_VERSION, tag):
+                    latest = tag.lstrip("vV")
+                    self.statusBar().showMessage(
+                        f"Pembaruan tersedia: v{latest} — menu Bantuan → "
+                        "Repositori GitHub", 8000)
+                    if self._update_manual:
+                        box = QMessageBox(self)
+                        box.setWindowTitle("Pembaruan Tersedia")
+                        box.setIcon(QMessageBox.Icon.Information)
+                        box.setText(f"<b>{APP_NAME} v{latest}</b> sudah rilis!")
+                        box.setInformativeText(
+                            f"Anda menjalankan v{APP_VERSION}.\n"
+                            "Kunjungi halaman rilis untuk mengunduh versi baru.")
+                        open_btn = box.addButton(
+                            "Buka Halaman Rilis",
+                            QMessageBox.ButtonRole.AcceptRole)
+                        box.addButton("Nanti",
+                                      QMessageBox.ButtonRole.RejectRole)
+                        box.exec()
+                        if box.clickedButton() is open_btn:
+                            self._open_url(data.get("html_url")
+                                           or APP_REPO_URL)
+                elif manual:
+                    self.statusBar().showMessage(
+                        f"{APP_NAME} sudah versi terbaru (v{APP_VERSION}).",
+                        4000)
+            except Exception:
+                pass
+        elif manual:
+            self.statusBar().showMessage(
+                "Gagal memeriksa pembaruan (tidak ada koneksi?).", 4000)
+        reply.deleteLater()
 
     # ============================================================ session
     def _load_settings(self):

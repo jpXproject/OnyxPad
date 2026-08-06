@@ -40,6 +40,7 @@ split panes, and theme switching.*
 | **File explorer** | Sidebar (`Ctrl+Shift+O`), double-click to open, right-click to open in a new pane |
 | **Sessions** | Split layout + open files + theme restored automatically (`~/.onyxpad/settings.json`) |
 | **Extras** | Quick Open `Ctrl+P`, recent files, drag & drop files, status bar (Ln/Col/words/encoding/language/zoom/version), zoom `Ctrl+wheel` |
+| **Help & updates** | Help menu: shortcuts, About (with repo & author links), **Check for updates** — auto-notifies when a new release is published (via GitHub Releases API) |
 
 ### Split panes
 

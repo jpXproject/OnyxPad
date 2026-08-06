@@ -40,6 +40,7 @@ pencarian, split panes, dan ganti tema.*
 | **File explorer** | Sidebar (`Ctrl+Shift+O`), klik dua kali untuk buka, menu kanan: buka di pane baru |
 | **Sesi** | Layout split + file terbuka + tema dipulihkan otomatis (`~/.onyxpad/settings.json`) |
 | **Lainnya** | Buka Cepat `Ctrl+P`, recent files, drag & drop file, status bar (Ln/Col/kata/encoding/bahasa/zoom/versi), zoom `Ctrl+wheel` |
+| **Bantuan & pembaruan** | Menu Bantuan: pintasan, Tentang (tautan repo & author), **Cek Pembaruan** — notifikasi otomatis saat rilis baru terbit (via GitHub Releases API) |
 
 ### Split panes
 
