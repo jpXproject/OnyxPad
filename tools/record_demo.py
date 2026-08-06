@@ -100,7 +100,8 @@ def step_typing():
     type_text(ed, "\ndef handler(request):\n")
     snap()
     hold(8)
-    type_text(ed, "    item = cache.get(request)\n")
+    # auto-indent sudah menyisipkan 4 spasi setelah Enter di atas
+    type_text(ed, "item = cache.get(request)\n")
     snap()
     hold(10)
 

@@ -9,7 +9,11 @@ Hasil di: docs/screenshots/*.png
 
 import os
 import sys
+import tempfile
 import time
+
+# Redirect folder settings ke temp agar skrip tidak menimpa sesi asli
+os.environ.setdefault("USERPROFILE", tempfile.mkdtemp(prefix="onyxpad_shot_"))
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -55,7 +59,6 @@ def hero_dark(app):
     win.open_file(DEMO)
     win.search_bar.show_find()
     win.search_bar.find_edit.setText("def")
-    win.search_bar._do_find(True)
     pump(app)
     save(win, "hero-dark.png")
     win.close()
@@ -78,6 +81,7 @@ def light_theme(app):
     win.open_file(DEMO)
     win.search_bar.show_find()
     win.search_bar.find_edit.setText("Cache")
+    win.search_bar.find_edit.returnPressed.emit()
     pump(app)
     save(win, "light.png")
     win.close()
