@@ -15,6 +15,15 @@ import time
 # Redirect folder settings ke temp agar skrip tidak menimpa sesi asli
 os.environ.setdefault("USERPROFILE", tempfile.mkdtemp(prefix="onyxpad_shot_"))
 
+# Qt offscreen TIDAK menemukan font sistem tanpa petunjuk direktori —
+# tanpa ini semua teks dirender sebagai kotak (tofu). Wajib di-set
+# SEBELUM QApplication dibuat.
+if os.name == "nt":
+    os.environ.setdefault("QT_QPA_FONTDIR", "C:/Windows/Fonts")
+else:
+    os.environ.setdefault("QT_QPA_FONTDIR",
+                          "/usr/share/fonts:/usr/local/share/fonts")
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PySide6.QtWidgets import QApplication
