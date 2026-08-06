@@ -5,14 +5,14 @@ import json
 import pytest
 
 import src.app as app_module
-from src.app import NotepadBlack
+from src.app import OnyxPad
 
 
 @pytest.fixture()
 def app_window(qapp, monkeypatch, tmp_path):
     monkeypatch.setattr(app_module, "SETTINGS_DIR", tmp_path)
     monkeypatch.setattr(app_module, "SETTINGS_FILE", tmp_path / "settings.json")
-    win = NotepadBlack()
+    win = OnyxPad()
     yield win
     for ed in win.manager.all_editors():
         ed.document().setModified(False)
@@ -96,7 +96,7 @@ def test_session_restore(qapp, monkeypatch, tmp_path):
     (tmp_path / "settings.json").write_text(json.dumps(settings),
                                             encoding="utf-8")
     patch_settings(monkeypatch, tmp_path)
-    win = NotepadBlack()
+    win = OnyxPad()
     try:
         eds = win.manager.all_editors()
         assert len(eds) == 1
@@ -113,7 +113,7 @@ def test_session_restore_invalid_layout(qapp, monkeypatch, tmp_path):
     (tmp_path / "settings.json").write_text(json.dumps(settings),
                                             encoding="utf-8")
     patch_settings(monkeypatch, tmp_path)
-    win = NotepadBlack()
+    win = OnyxPad()
     try:
         # restore gagal → fallback ke pane kosong
         assert len(win.manager.all_editors()) == 1
@@ -128,7 +128,7 @@ def test_open_file_reuses_tab(qapp, monkeypatch, tmp_path):
     f = tmp_path / "test.txt"
     f.write_text("isi", encoding="utf-8")
     patch_settings(monkeypatch, tmp_path)
-    win = NotepadBlack()
+    win = OnyxPad()
     try:
         ed1 = win.open_file(str(f))
         assert ed1 is not None
@@ -147,7 +147,7 @@ def test_open_file_new_pane(qapp, monkeypatch, tmp_path):
     f = tmp_path / "test.txt"
     f.write_text("isi", encoding="utf-8")
     patch_settings(monkeypatch, tmp_path)
-    win = NotepadBlack()
+    win = OnyxPad()
     try:
         win.open_file(str(f), new_pane=True)
         assert len(win.manager._panes) == 2
@@ -159,7 +159,7 @@ def test_open_file_new_pane(qapp, monkeypatch, tmp_path):
 
 def test_open_missing_file_returns_none(qapp, monkeypatch, tmp_path):
     patch_settings(monkeypatch, tmp_path)
-    win = NotepadBlack()
+    win = OnyxPad()
     try:
         # path tidak ada → kembalikan None tanpa dialog
         assert win.open_file(str(tmp_path / "nope.txt")) is None
@@ -201,7 +201,7 @@ def test_scan_folder_filters(tmp_path):
     (tmp_path / "__pycache__").mkdir()
     (tmp_path / "__pycache__" / "z.pyc").write_text("", encoding="utf-8")
 
-    files = app_module.NotepadBlack._scan_folder(str(tmp_path))
+    files = app_module.OnyxPad._scan_folder(str(tmp_path))
     names = [p.replace("\\", "/") for p in files]
     assert "a.py" in names
     assert "b.txt" in names

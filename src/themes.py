@@ -1,4 +1,4 @@
-"""Palet tema NotepadBlack — setiap tema punya warna editor, warna UI (QSS), dan warna token syntax."""
+"""Palet tema OnyxPad — setiap tema punya warna editor, warna UI (QSS), dan warna token syntax."""
 
 # Kunci token yang dipakai syntax.py
 TOKEN_KEYS = [
@@ -171,6 +171,7 @@ QMainWindow, QDialog { background: @window; }
 QMenuBar { background: @window; color: @text; border-bottom: 1px solid @border; }
 QMenuBar::item { background: transparent; padding: 4px 10px; border-radius: 3px; }
 QMenuBar::item:selected { background: @hover; }
+QMenuBar::item:pressed { background: @menu_sel; }
 QMenu { background: @menu; color: @text; border: 1px solid @border; }
 QMenu::item { padding: 5px 24px 5px 14px; }
 QMenu::item:selected { background: @menu_sel; color: @text; }
@@ -182,7 +183,8 @@ QTabWidget::pane { border: none; background: @panel; }
 QTabBar { background: @panel_alt; }
 QTabBar::tab { background: @tab_inactive; color: @muted; padding: 5px 12px;
   border: none; border-right: 1px solid @border; min-width: 80px; }
-QTabBar::tab:selected { background: @tab_active; color: @text; }
+QTabBar::tab:selected { background: @tab_active; color: @text;
+  border-bottom: 2px solid @accent; }
 QTabBar::tab:hover:!selected { background: @hover; color: @text; }
 QTabBar::close-button { image: none; }
 QSplitter::handle { background: @border; }
@@ -196,13 +198,17 @@ QTreeView::item:selected { background: @accent; color: @window; }
 QTreeView::item:hover { background: @hover; }
 QLineEdit, QPlainTextEdit, QTextEdit { background: @input; color: @text;
   border: 1px solid @border; border-radius: 4px; selection-background-color: @menu_sel; }
+QLineEdit { padding: 3px 6px; }
 QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus { border: 1px solid @accent; }
 QPushButton { background: @panel_alt; color: @text; border: 1px solid @border;
   border-radius: 4px; padding: 4px 12px; }
 QPushButton:hover { background: @hover; border-color: @accent; }
 QPushButton:pressed { background: @menu_sel; }
+QPushButton:focus { border: 1px solid @accent; }
+QMessageBox QPushButton { min-width: 90px; padding: 6px 16px; }
 QCheckBox { color: @text; }
-QToolTip { background: @panel_alt; color: @text; border: 1px solid @border; }
+QToolTip { background: @panel_alt; color: @text; border: 1px solid @border;
+  padding: 4px 8px; }
 QScrollBar:vertical { background: transparent; width: 10px; margin: 0; }
 QScrollBar::handle:vertical { background: @border; border-radius: 4px; min-height: 24px; }
 QScrollBar::handle:vertical:hover { background: @muted; }

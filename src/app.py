@@ -1,4 +1,4 @@
-"""NotepadBlack — editor split-panes pro berbasis PySide6."""
+"""OnyxPad — editor split-panes pro berbasis PySide6."""
 
 import json
 import os
@@ -17,10 +17,11 @@ from .panes import SplitManager
 from .search import SearchBar
 from .syntax import LANG_NAMES
 from .themes import THEMES, THEME_ORDER, build_qss
+from .version import APP_ID, APP_NAME, APP_TAGLINE, APP_VERSION
 
 APP_DIR = Path(__file__).resolve().parent.parent
 ICON_PATH = APP_DIR / "favicon.ico"
-SETTINGS_DIR = Path.home() / ".notepadblack"
+SETTINGS_DIR = Path.home() / f".{APP_ID}"
 SETTINGS_FILE = SETTINGS_DIR / "settings.json"
 
 MAX_RECENT = 10
@@ -38,10 +39,10 @@ def pick_mono_font():
     return "Consolas"
 
 
-class NotepadBlack(QMainWindow):
+class OnyxPad(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("NotepadBlack — Pro")
+        self.setWindowTitle(f"{APP_NAME} — Pro")
         if ICON_PATH.exists():
             self.setWindowIcon(QIcon(str(ICON_PATH)))
 
@@ -66,6 +67,8 @@ class NotepadBlack(QMainWindow):
         self.manager.ensure_first_pane()
 
         self._refresh_status()
+        self.statusBar().showMessage(
+            f"{APP_NAME} v{APP_VERSION} — {APP_TAGLINE}", 4000)
         self.setAcceptDrops(True)
 
     # ================================================================ UI
@@ -101,7 +104,7 @@ class NotepadBlack(QMainWindow):
         self.sb_line = QLabel("Ln 1, Col 1")
         self.sb_sel = QLabel("")
         self.sb_stats = QLabel("")
-        self.sb_meta = QLabel("")
+        self.sb_meta = QLabel(f"v{APP_VERSION}")
         self.sb_lang = QLabel("")
         bar = self.statusBar()
         bar.addWidget(self.sb_line)
@@ -203,7 +206,7 @@ class NotepadBlack(QMainWindow):
         # ---------------- Bantuan
         m_help = mb.addMenu("Bantuan")
         self._add(m_help, "Pintasan Keyboard", self.show_shortcuts, "F1")
-        self._add(m_help, "Tentang NotepadBlack", self.show_about)
+        self._add(m_help, f"Tentang {APP_NAME}", self.show_about)
 
     def _add(self, menu, label, slot, shortcut=None):
         act = menu.addAction(label, slot)
@@ -479,7 +482,7 @@ class NotepadBlack(QMainWindow):
                              f"{int(ed.zoom_level()) or 100}%")
         name = ed.display_name()
         star = " ●" if ed.document().isModified() else ""
-        self.setWindowTitle(f"NotepadBlack — {name}{star}")
+        self.setWindowTitle(f"{APP_NAME} — {name}{star}")
 
     # ============================================================ recent
     def _add_recent(self, path):
@@ -518,13 +521,13 @@ class NotepadBlack(QMainWindow):
 
     def show_about(self):
         QMessageBox.about(
-            self, "Tentang NotepadBlack",
-            "<h3>NotepadBlack — Pro</h3>"
-            "<p>Editor teks dengan split panes bertingkat gaya tmux/VS Code, "
-            "dibangun dengan PySide6 (Qt6).</p>"
+            self, f"Tentang {APP_NAME}",
+            f"<h3>{APP_NAME} — {APP_TAGLINE}</h3>"
+            f"<p><b>Versi {APP_VERSION}</b> · editor teks dengan split panes "
+            "bertingkat gaya tmux/VS Code, dibangun dengan PySide6 (Qt6).</p>"
             "<p>Fitur: split kanan/bawah, tab per pane, syntax highlighting "
-            "multi-bahasa, find &amp; replace, tema, sesi otomatis, dan "
-            "penjelajah folder.</p>")
+            "multi-bahasa, find &amp; replace, 7 tema, multi-kursor, sesi "
+            "otomatis, dan penjelajah folder.</p>")
 
     # ============================================================ session
     def _load_settings(self):

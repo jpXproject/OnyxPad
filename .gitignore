@@ -12,7 +12,7 @@ dist/
 *.spec
 
 # Sesi & preferensi pengguna
-.notepadblack/
+.onyxpad/
 
 # Editor / OS
 .idea/

@@ -2,4 +2,4 @@ PySide6>=6.6
 Pillow>=10.0        # hanya untuk convert_icon.py (konversi PNG -> ICO)
 # pytest>=7.0        # dev: menjalankan suite test
 # pytest-qt>=4.4     # dev: test UI (SearchBar) — lihat README
-# pyinstaller>=6.0  # opsional: untuk membangun NotepadBlack.exe (lihat README)
+# pyinstaller>=6.0  # opsional: untuk membangun OnyxPad.exe (lihat README)

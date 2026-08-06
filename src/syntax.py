@@ -1,4 +1,4 @@
-"""Syntax highlighting multi-bahasa untuk NotepadBlack.
+"""Syntax highlighting multi-bahasa untuk OnyxPad.
 
 Strategi: aturan regex per bahasa (string & komentar baris diproses TERAKHIR lewat
 sweeper agar `#`/`//` di dalam string tidak ikut ter-warnai), plus state machine

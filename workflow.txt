@@ -1,4 +1,4 @@
-notepadblack/
+onyxpad/
 │
 ├── assets/                     # Tempat menyimpan semua aset visual
 │   ├── logo_utama.png          # Gambar asli (sumber)
@@ -12,4 +12,4 @@ notepadblack/
 │
 ├── build/                      # [Otomatis muncul] Folder sementara saat proses PyInstaller
 └── dist/                       # [Otomatis muncul] Tempat file aplikasi akhir Anda berada
-    └── NotepadBlack.exe        # File .exe berikon yang siap disebarkan
+    └── OnyxPad.exe            # File .exe berikon yang siap disebarkan

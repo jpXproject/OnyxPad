@@ -1,8 +1,8 @@
-# NotepadBlack — Editor Split Panes Pro (PySide6)
+# OnyxPad — Editor Split Panes Pro (PySide6)
 
 Notepad hitam bertema gelap yang di-upgrade penuh: **split panes bertingkat gaya
 tmux / VS Code**, tab per pane, syntax highlighting multi-bahasa, find &
-replace, tema lengkap, sesi otomatis, dan penjelajah folder.
+replace, 7 tema, multi-kursor, sesi otomatis, dan penjelajah folder.
 
 ## Fitur
 
@@ -17,8 +17,8 @@ replace, tema lengkap, sesi otomatis, dan penjelajah folder.
 | **Multi-kursor** | `Ctrl+D` pilih kata/kemunculan berikutnya, `Ctrl+U` buang kursor terakhir, `Esc` selesai — ketik/backspace/Enter berlaku di semua kursor sekaligus |
 | **Tema** | 7 tema: Dracula, One Dark, Monokai, Matrix Green, Nord, Solarized Dark, Light |
 | **File explorer** | Sidebar folder (`Ctrl+Shift+O`), klik dua kali untuk buka, menu kanan: buka di pane baru |
-| **Sesi** | Layout split + file terbuka + tema diingat otomatis (tersimpan di `~/.notepadblack/settings.json`) |
-| **Lainnya** | Buka Cepat `Ctrl+P`, Recent files, drag&drop file ke jendela, status bar (Ln/Col/kata/encoding/bahasa/zoom), zoom `Ctrl+wheel` |
+| **Sesi** | Layout split + file terbuka + tema diingat otomatis (tersimpan di `~/.onyxpad/settings.json`) |
+| **Lainnya** | Buka Cepat `Ctrl+P`, Recent files, drag&drop file ke jendela, status bar (Ln/Col/kata/encoding/bahasa/zoom + versi), zoom `Ctrl+wheel` |
 
 ## Menjalankan
 
@@ -45,10 +45,13 @@ files, scan folder).
 
 ```bash
 pip install pyinstaller
-python -m PyInstaller --noconfirm --windowed --icon favicon.ico --name NotepadBlack ^
-    --add-data "favicon.ico;." main.py
-# hasil di dist/NotepadBlack/NotepadBlack.exe
+python build.py            # satu file  -> dist/OnyxPad.exe
+python build.py folder     # folder     -> dist/OnyxPad/OnyxPad.exe
 ```
+
+Di Windows cukup klik dua kali `build.bat` (build satu file). Info versi
+aplikasi dibaca dari `src/version.py` dan ditampilkan di status bar serta
+dialog Tentang.
 
 ## Pintasan Penting
 
