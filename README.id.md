@@ -1,7 +1,7 @@
 # OnyxPad — Editor Split Panes Pro
 
 <p align="center">
-  <img src="docs/onyx-logo.png" alt="OnyxPad — Your Notepad Buddy" width="420">
+  <img src="docs/onyx-logo.png" alt="OnyxPad — Your Notepad Buddy" width="480">
 </p>
 
 **[English](README.md)** · [Laporkan Bug / Usulkan Fitur](https://github.com/jpXproject/OnyxPad/issues)
