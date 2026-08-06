@@ -82,6 +82,104 @@ def test_skip_closer(make_editor):
     assert ed.textCursor().position() == 2
 
 
+def test_quote_overtype_skips_closer(make_editor):
+    """Mengetik kutip di depan penutup kutip = overtype (lompat), bukan duplikat."""
+    ed = make_editor()
+    press(ed, '"', Qt.Key.Key_QuoteDbl)  # "" auto-close, kursor di tengah
+    press(ed, '"', Qt.Key.Key_QuoteDbl)  # overtype: lompat ke kanan
+    assert ed.toPlainText() == '""'
+    assert ed.textCursor().position() == 2
+
+
+def test_open_paren_before_closer_nests(make_editor):
+    """'(' bukan penutup — mengetiknya tetap membuat pasangan baru (bukan skip)."""
+    ed = make_editor()
+    ed.setPlainText("()")
+    set_cursor(ed, 0)
+    press(ed, "(", Qt.Key.Key_ParenLeft)
+    assert ed.toPlainText() == "()()"
+    assert ed.textCursor().position() == 1
+
+
+def test_bracket_matching_quotes(make_editor):
+    """Pasangan kutip simetris juga ikut dipasangkan (dulu selalu gagal)."""
+    ed = make_editor()
+    ed.setPlainText('"abc"')
+    set_cursor(ed, 4)  # kursor tepat pada penutup
+    assert ed._bracket_pairs() == [(0, 4)]
+    set_cursor(ed, 0)  # kursor tepat pada pembuka
+    assert ed._bracket_pairs() == [(0, 4)]
+
+
+# ------------------------------------------------------- tab stop
+def test_tab_stop_jumps_out_parenthesis(make_editor):
+    ed = make_editor(tab_width=4)
+    press(ed, "(", Qt.Key.Key_ParenLeft)  # () kursor di 1
+    press(ed, "x", Qt.Key.Key_X)          # (x) kursor di 2
+    press(ed, "\t", Qt.Key.Key_Tab)
+    assert ed.toPlainText() == "(x)"
+    assert ed.textCursor().position() == 3  # melewati ')'
+
+
+def test_tab_stop_jumps_out_quote(make_editor):
+    ed = make_editor(tab_width=4)
+    press(ed, '"', Qt.Key.Key_QuoteDbl)  # "" kursor di 1
+    press(ed, "a", Qt.Key.Key_A)          # "a" kursor di 2
+    press(ed, "\t", Qt.Key.Key_Tab)
+    assert ed.toPlainText() == '"a"'
+    assert ed.textCursor().position() == 3
+
+
+def test_tab_stop_empty_pair_jumps_out(make_editor):
+    """Tab langsung setelah auto-close (kursor di tengah pair kosong) ikut keluar."""
+    ed = make_editor(tab_width=4)
+    press(ed, "[", Qt.Key.Key_BracketLeft)
+    press(ed, "\t", Qt.Key.Key_Tab)
+    assert ed.toPlainText() == "[]"
+    assert ed.textCursor().position() == 2
+
+
+def test_tab_stop_not_on_stray_closer(make_editor):
+    """Tab di depan ')' tanpa pasangan terbuka: tetap menyisipkan spasi."""
+    ed = make_editor(tab_width=4)
+    ed.setPlainText(")")
+    set_cursor(ed, 0)
+    press(ed, "\t", Qt.Key.Key_Tab)
+    assert ed.toPlainText() == "    )"
+    assert ed.textCursor().position() == 4
+
+
+def test_tab_stop_with_selection_indents(make_editor):
+    """Dengan seleksi, Tab tetap mengindentasi baris — bukan melompat keluar."""
+    ed = make_editor(tab_width=4)
+    ed.setPlainText("(ab)")
+    ed.selectAll()
+    press(ed, "\t", Qt.Key.Key_Tab)
+    assert ed.toPlainText() == "    (ab)"
+
+
+def test_quote_wraps_selection_near_closer(make_editor):
+    """Seleksi aktif selalu dibungkus pasangan — skip hanya berlaku tanpa seleksi."""
+    ed = make_editor()
+    ed.setPlainText('"foo"')
+    set_cursor(ed, 1)
+    c = ed.textCursor()
+    c.setPosition(4, QTextCursor.MoveMode.KeepAnchor)  # pilih "foo"
+    ed.setTextCursor(c)
+    press(ed, '"', Qt.Key.Key_QuoteDbl)
+    assert ed.toPlainText() == '""foo""'
+
+
+def test_tab_stop_not_before_opening_quote(make_editor):
+    """Tab di depan KUTIP PEMBUKA (jumlah kutip sebelumnya genap) tidak melompat."""
+    ed = make_editor(tab_width=4)
+    ed.setPlainText('"a" "b"')
+    set_cursor(ed, 4)  # tepat sebelum pembuka string kedua
+    press(ed, "\t", Qt.Key.Key_Tab)
+    assert ed.toPlainText() == '"a"     "b"'
+    assert ed.textCursor().position() == 8
+
+
 # ---------------------------------------------------------------- indent
 def test_tab_indents_four_spaces(make_editor):
     ed = make_editor(tab_width=4)

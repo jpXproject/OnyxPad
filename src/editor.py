@@ -176,12 +176,15 @@ class CodeEditor(QPlainTextEdit):
             return
         text = event.text()
         if text and not event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-            if text in PAIRS:
-                self._insert_pair(text, PAIRS[text])
-                return
+            # cek penutup DULU: karakter seperti '"' ada di PAIRS sekaligus
+            # _CLOSERS — mengetiknya di depan penutup harus melompati
+            # (overtype), bukan membuat pasangan baru yang menduplikat.
             if text in _CLOSERS:
                 if self._skip_closer(text):
                     return
+            if text in PAIRS:
+                self._insert_pair(text, PAIRS[text])
+                return
         super().keyPressEvent(event)
 
     def _handle_tab(self, shift):
@@ -197,8 +200,10 @@ class CodeEditor(QPlainTextEdit):
             return
         if cursor.hasSelection():
             self._indent_selection(1)
-        else:
-            self.insertPlainText(" " * self._tab_width)
+            return
+        if self._jump_out_pair():
+            return
+        self.insertPlainText(" " * self._tab_width)
 
     def _indent_selection(self, direction):
         cursor = self.textCursor()
@@ -286,12 +291,38 @@ class CodeEditor(QPlainTextEdit):
 
     def _skip_closer(self, closer):
         cursor = self.textCursor()
+        # seleksi aktif = bungkus pasangan (via _insert_pair), bukan skip
+        if cursor.hasSelection():
+            return False
         c = self.document().characterAt(cursor.position())
         if c == closer:
             cursor.movePosition(QTextCursor.MoveOperation.Right)
             self.setTextCursor(cursor)
             return True
         return False
+
+    def _jump_out_pair(self):
+        """Tab stop: Tab di depan penutup pasangan (kurung/kutip) melompat
+        melewatinya alih-alih menyisipkan spasi. Hanya jika karakter di
+        kanan kursor memang penutup: kurung asimetris wajib punya pembuka
+        yang cocok; kutip simetris harus berjumlah ganjil sebelum kursor
+        (genap berarti karakter itu justru pembuka — jangan dilompati)."""
+        cursor = self.textCursor()
+        if cursor.hasSelection():
+            return False
+        pos = cursor.position()
+        closer = self.document().characterAt(pos)
+        if closer not in _CLOSERS:
+            return False
+        text = self.document().toPlainText()
+        if PAIRS.get(closer) == closer:
+            if text[:pos].count(closer) % 2 == 0:
+                return False
+        elif _find_backward(text, pos, closer) < 0:
+            return False
+        cursor.movePosition(QTextCursor.MoveOperation.Right)
+        self.setTextCursor(cursor)
+        return True
 
     def toggle_comment(self):
         prefix = _COMMENT_TOGGLE.get(self._language, "//")
@@ -577,6 +608,15 @@ class CodeEditor(QPlainTextEdit):
                     break
         if char is None:
             return []
+        if PAIRS.get(char) == char:
+            # pasangan simetris (kutip): coba sebagai pembuka, lalu penutup
+            match = _find_forward(text, start, char, char)
+            if match >= 0:
+                return [(start, match)]
+            match = _find_backward(text, start, char)
+            if match >= 0:
+                return [(match, start)]
+            return []
         if char in PAIRS:
             match = _find_forward(text, start, char, PAIRS[char])
             if match >= 0:
@@ -614,9 +654,24 @@ class CodeEditor(QPlainTextEdit):
 
 # ------------------------------------------------------------- helpers
 def _find_forward(text, start, opener, closer):
+    n = len(text)
+    if opener == closer:
+        # pasangan simetris (kutip): kemunculan pertama = pembuka, kemunculan
+        # berikutnya menurunkan kedalaman sampai 0 = penutupnya.
+        depth = 0
+        i = start
+        while i < n:
+            if text[i] == opener:
+                if depth == 0:
+                    depth = 1
+                else:
+                    depth -= 1
+                    if depth == 0:
+                        return i
+            i += 1
+        return -1
     depth = 0
     i = start
-    n = len(text)
     while i < n:
         ch = text[i]
         if ch == opener:
@@ -632,6 +687,21 @@ def _find_forward(text, start, opener, closer):
 def _find_backward(text, start, closer):
     opener = {v: k for k, v in PAIRS.items()}.get(closer)
     if opener is None:
+        return -1
+    if opener == closer:
+        # pasangan simetris: kemunculan di start = penutup, kemunculan
+        # sebelumnya menurunkan kedalaman sampai 0 = pembukanya.
+        depth = 0
+        i = start
+        while i >= 0:
+            if text[i] == closer:
+                if depth == 0:
+                    depth = 1
+                else:
+                    depth -= 1
+                    if depth == 0:
+                        return i
+            i -= 1
         return -1
     depth = 0
     i = start

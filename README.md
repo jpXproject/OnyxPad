@@ -13,7 +13,7 @@ replace, tema lengkap, sesi otomatis, dan penjelajah folder.
 | **Navigasi pane** | `Ctrl+Tab` ganti pane, `Alt+←↑→↓` fokus pane ke arahnya |
 | **Syntax highlighting** | Python, JS/TS, HTML, CSS, C/C++, Java, JSON, Markdown, Shell, YAML — auto-deteksi dari ekstensi |
 | **Find & replace** | `Ctrl+F` / `Ctrl+H`, opsi Aa / kata utuh / regex, hitung jumlah cocok, Ganti Semua |
-| **Editor pro** | Nomor baris, highlight baris aktif, pencocokan kurung, auto-pair `(){}[]""`, auto-indent, indentasi 4 spasi, komentari `Ctrl+/` |
+| **Editor pro** | Nomor baris, highlight baris aktif, pencocokan kurung, auto-pair `(){}[]""` (termasuk overtype kutip), tab stop (Tab melompat keluar pasangan), auto-indent, indentasi 4 spasi, komentari `Ctrl+/` |
 | **Tema** | 7 tema: Dracula, One Dark, Monokai, Matrix Green, Nord, Solarized Dark, Light |
 | **File explorer** | Sidebar folder (`Ctrl+Shift+O`), klik dua kali untuk buka, menu kanan: buka di pane baru |
 | **Sesi** | Layout split + file terbuka + tema diingat otomatis (tersimpan di `~/.notepadblack/settings.json`) |
