@@ -60,8 +60,27 @@ def to_square(img, size=512):
     return canvas.resize((size, size), Image.Resampling.LANCZOS)
 
 
+def export_full_logo(src, out="docs/onyx-logo.png", width=960):
+    """Hapus background lalu crop ketat seluruh logo (ikon + teks + subtitle)."""
+    img = Image.open(src).convert("RGBA")
+    img = remove_background(img)
+    bbox = img.getbbox()
+    if bbox:
+        img = img.crop(bbox)
+    if img.width > width:
+        img = img.resize((width, int(img.height * width / img.width)),
+                         Image.Resampling.LANCZOS)
+    img.save(out, "PNG")
+    print(f"OK -> {out} ({img.size}) - logo transparan")
+
+
 def main():
-    src = sys.argv[1] if len(sys.argv) > 1 else "ONYX.png"
+    args = sys.argv[1:]
+    if args and args[0] == "--logo":
+        src = args[1] if len(args) > 1 else "ONYX.png"
+        export_full_logo(src)
+        return
+    src = args[0] if args else "ONYX.png"
     out = Path("favicon.ico")
     img = Image.open(src).convert("RGBA")
     img = remove_background(img)

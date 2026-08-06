@@ -1,5 +1,9 @@
 # OnyxPad — Editor Split Panes Pro
 
+<p align="center">
+  <img src="docs/onyx-logo.png" alt="OnyxPad — Your Notepad Buddy" width="420">
+</p>
+
 **[🇮🇩 Bahasa Indonesia](README.id.md)** · [Report a Bug / Request a Feature](https://github.com/jpXproject/OnyxPad/issues)
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
