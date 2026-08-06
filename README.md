@@ -43,9 +43,9 @@ recent files, scan folder).
 
 ```bash
 pip install pyinstaller
-pyinstaller --noconfirm --windowed --icon favicon.ico --name NotepadBlack ^
+python -m PyInstaller --noconfirm --windowed --icon favicon.ico --name NotepadBlack ^
     --add-data "favicon.ico;." main.py
-# hasil di dist/NotepadBlack.exe
+# hasil di dist/NotepadBlack/NotepadBlack.exe
 ```
 
 ## Pintasan Penting
