@@ -30,14 +30,15 @@ python main.py
 Suite test otomatis (pytest, berjalan headless via Qt offscreen):
 
 ```bash
-pip install pytest
+pip install pytest pytest-qt
 pytest
 ```
 
 Mencakup: editor (auto-pair, indent, komentar, I/O file), find & replace
-(literal, case, kata utuh, regex), syntax highlighting, tema/QSS, sistem split
-panes (split, navigasi, tutup, sesi), dan integrasi aplikasi (tema, sesi,
-recent files, scan folder).
+(literal, case, kata utuh, regex), UI SearchBar (pytest-qt: visibilitas,
+tombol, keyboard, replace), syntax highlighting, tema/QSS, sistem split panes
+(split, navigasi, tutup, sesi), dan integrasi aplikasi (tema, sesi, recent
+files, scan folder).
 
 ## Membangun .exe (opsional)
 
