@@ -469,7 +469,9 @@ class NotepadBlack(QMainWindow):
             return
         line, col, sel = ed.cursor_info()
         words, chars = ed.stats()
-        self.sb_line.setText(f"Ln {line}, Col {col}")
+        count = ed.cursor_count()
+        suffix = f" · {count} kursor" if count > 1 else ""
+        self.sb_line.setText(f"Ln {line}, Col {col}{suffix}")
         self.sb_sel.setText(f"  {sel} dipilih" if sel else "")
         self.sb_stats.setText(f"  {words} kata · {chars} karakter")
         lang = LANG_NAMES.get(getattr(ed, "_language", "plain"), "")
@@ -595,6 +597,11 @@ SHORTCUTS_TEXT = """\
   Ctrl+F cari · Ctrl+H ganti · F3 berikutnya · Shift+F3 sebelumnya
   Ctrl+/ komentari · Ctrl+G pergi ke baris
   Ctrl+= / Ctrl+- / Ctrl+0 zoom in / out / reset
+
+<b>Multi-kursor</b>
+  Ctrl+D     tambah kursor di kemunculan kata berikutnya
+  Ctrl+U     buang kursor terakhir · Esc selesai
+  Ketik/Backspace/Enter berlaku di semua kursor sekaligus
 
 <b>Lainnya</b>
   Ctrl+wheel  zoom · Alt+Z bungkus kata · Esc tutup bar cari

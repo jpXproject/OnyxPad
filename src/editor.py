@@ -6,7 +6,8 @@ import os
 from PySide6.QtCore import Qt, QRect, QRegularExpression, QSize, Signal
 from PySide6.QtGui import (QColor, QFontMetricsF, QPainter, QTextCharFormat,
                            QTextCursor, QTextDocument, QTextFormat, QWheelEvent)
-from PySide6.QtWidgets import QPlainTextEdit, QTextEdit, QWidget
+from PySide6.QtWidgets import (QApplication, QPlainTextEdit, QTextEdit,
+                               QWidget)
 
 from .syntax import Highlighter, LANG_NAMES, detect_language
 
@@ -47,6 +48,7 @@ class CodeEditor(QPlainTextEdit):
         self._search_use_regex = False
         self._search_color = QColor(theme["selection"])
         self._zoom = 0
+        self._extra_cursors = []  # rentang [start, end] kursor sekunder (Ctrl+D)
 
         f = self.font()
         if font_family:
@@ -165,8 +167,22 @@ class CodeEditor(QPlainTextEdit):
     # -------------------------------------------------------------- editing
     def keyPressEvent(self, event):
         key = event.key()
+        mods = event.modifiers()
+        ctrl = Qt.KeyboardModifier.ControlModifier
+        if key == Qt.Key.Key_D and mods & ctrl:
+            self._add_next_occurrence()
+            return
+        if key == Qt.Key.Key_U and mods & ctrl:
+            self._remove_last_cursor()
+            return
+        if self._extra_cursors:
+            # mode multi-kursor: ketik/backspace/Enter diproses di semua
+            # kursor; kunci lain (panah, pintasan) menutup mode ini.
+            if self._handle_multi_key(event):
+                return
+            self._clear_extra_cursors()
         if key == Qt.Key.Key_Tab:
-            self._handle_tab(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+            self._handle_tab(mods & Qt.KeyboardModifier.ShiftModifier)
             return
         if key == Qt.Key.Key_Backspace:
             if self._handle_dedent():
@@ -175,7 +191,7 @@ class CodeEditor(QPlainTextEdit):
             self._handle_newline(event)
             return
         text = event.text()
-        if text and not event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+        if text and not mods & ctrl:
             # cek penutup DULU: karakter seperti '"' ada di PAIRS sekaligus
             # _CLOSERS — mengetiknya di depan penutup harus melompati
             # (overtype), bukan membuat pasangan baru yang menduplikat.
@@ -324,6 +340,214 @@ class CodeEditor(QPlainTextEdit):
         self.setTextCursor(cursor)
         return True
 
+    # -------------------------------------------------------- multi-kursor
+    def cursor_count(self):
+        """Jumlah kursor aktif (utama + ekstra)."""
+        return 1 + len(self._extra_cursors)
+
+    def _multi_ranges(self):
+        """Rentang semua kursor [(start, end, is_main)] terurut menaik."""
+        c = self.textCursor()
+        items = [(c.selectionStart(), c.selectionEnd(), True)]
+        items.extend((s, e, False) for s, e in self._extra_cursors)
+        return sorted(items)
+
+    def _clear_extra_cursors(self):
+        if not self._extra_cursors:
+            return
+        self._extra_cursors = []
+        self._refresh_extra()
+
+    def _remove_last_cursor(self):
+        """Ctrl+U: buang kursor ekstra terakhir, kursor utama pindah ke sana."""
+        if not self._extra_cursors:
+            return
+        start, end = self._extra_cursors.pop()
+        c = self.textCursor()
+        c.setPosition(start)
+        c.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
+        self.setTextCursor(c)
+        self._refresh_extra()
+
+    def _add_next_occurrence(self):
+        """Ctrl+D: pilih kata di kursor; tekan lagi untuk menambahkan
+        kemunculan berikutnya (wrap ke awal dokumen bila habis)."""
+        c = self.textCursor()
+        if not c.hasSelection():
+            # mulai urutan baru: buang kursor ekstra kosong yang basi
+            self._extra_cursors = [r for r in self._extra_cursors
+                                   if r[0] != r[1]]
+            word = self._word_under_cursor()
+            if word is None:
+                return
+            start, end = word
+            c.setPosition(start)
+            c.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
+            self.setTextCursor(c)
+            return
+        term = c.selectedText().replace("\u2029", "\n")
+        if not term:
+            return
+        text = self.document().toPlainText()
+        ranges = self._multi_ranges()
+        last = max(end for _s, end, _m in ranges)
+        pos = text.find(term, last)
+        if pos < 0:
+            pos = text.find(term)  # wrap: cari dari awal dokumen
+        if pos < 0:
+            return
+        new_end = pos + len(term)
+        if any(s == pos and e == new_end for s, e, _m in ranges):
+            return
+        self._extra_cursors = [[s, e] for s, e, _m in ranges if s != e]
+        nc = self.textCursor()
+        nc.setPosition(pos)
+        nc.setPosition(new_end, QTextCursor.MoveMode.KeepAnchor)
+        self.setTextCursor(nc)
+        self._refresh_extra()
+
+    def _word_under_cursor(self):
+        """Kembalikan (start, end) kata di bawah kursor, atau None."""
+        pos = self.textCursor().position()
+        text = self.document().toPlainText()
+        n = len(text)
+        if n == 0 or pos > n:
+            return None
+
+        def is_word(ch):
+            return ch.isalnum() or ch == "_"
+
+        p = pos
+        if p >= n or not is_word(text[p]):
+            p -= 1
+        if p < 0 or not is_word(text[p]):
+            return None
+        start = p
+        while start > 0 and is_word(text[start - 1]):
+            start -= 1
+        end = p
+        while end < n and is_word(text[end]):
+            end += 1
+        return start, end
+
+    def _handle_multi_key(self, event):
+        """Tangani tombol saat multi-kursor aktif; False = keluar mode."""
+        key = event.key()
+        mods = event.modifiers()
+        ctrl = Qt.KeyboardModifier.ControlModifier
+        if key == Qt.Key.Key_Escape:
+            self._clear_extra_cursors()
+            return True
+        if key == Qt.Key.Key_Backspace:
+            self._multi_delete_text(back=True)
+            return True
+        if key == Qt.Key.Key_Delete:
+            self._multi_delete_text(back=False)
+            return True
+        if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            self._multi_insert_text("\n")
+            return True
+        if key == Qt.Key.Key_Tab and not (mods & Qt.KeyboardModifier.ShiftModifier):
+            self._multi_insert_text(" " * self._tab_width)
+            return True
+        if key == Qt.Key.Key_V and mods & ctrl:
+            text = QApplication.clipboard().text()
+            if text:
+                self._multi_insert_text(text)
+            return True
+        text = event.text()
+        if not text or mods & ctrl:
+            return False
+        if text in PAIRS:
+            self._multi_insert_pair(text, PAIRS[text])
+            return True
+        if text in _CLOSERS:
+            self._multi_insert_closer(text)
+            return True
+        self._multi_insert_text(text)
+        return True
+
+    def _multi_insert_text(self, text):
+        """Sisipkan text di semua kursor (seleksi diganti), dari bawah ke atas."""
+        results = []
+        for start, end, is_main in reversed(self._multi_ranges()):
+            c = QTextCursor(self.document())
+            c.setPosition(start)
+            c.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
+            c.insertText(text)
+            d = len(text) - (end - start)
+            results.append((c.position(), is_main, d))
+        self._finish_multi_edit(results)
+
+    def _multi_insert_pair(self, opener, closer):
+        """Bungkus seleksi di semua kursor dengan pasangan pembuka/penutup."""
+        results = []
+        for start, end, is_main in reversed(self._multi_ranges()):
+            c = QTextCursor(self.document())
+            c.setPosition(start)
+            c.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
+            if start != end:
+                selected = c.selectedText()
+                c.insertText(opener + selected + closer)
+            else:
+                c.insertText(opener + closer)
+            results.append((c.position(), is_main, 2))
+        self._finish_multi_edit(results)
+
+    def _multi_insert_closer(self, closer):
+        """Sisipkan penutup di semua kursor; lompati penutup yang sudah ada."""
+        results = []
+        for start, end, is_main in reversed(self._multi_ranges()):
+            c = QTextCursor(self.document())
+            c.setPosition(start)
+            c.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
+            if start == end and self.document().characterAt(end) == closer:
+                c.setPosition(end + 1)
+                results.append((c.position(), is_main, 0))
+            else:
+                c.insertText(closer)
+                results.append((c.position(), is_main, 1))
+        self._finish_multi_edit(results)
+
+    def _multi_delete_text(self, back):
+        """Backspace/Delete di semua kursor (hapus seleksi atau satu karakter)."""
+        results = []
+        for start, end, is_main in reversed(self._multi_ranges()):
+            c = QTextCursor(self.document())
+            c.setPosition(start)
+            c.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
+            if start != end:
+                c.removeSelectedText()
+                d = -(end - start)
+            else:
+                before = self.document().characterCount()
+                if back:
+                    c.deletePreviousChar()
+                else:
+                    c.deleteChar()
+                d = self.document().characterCount() - before
+            results.append((c.position(), is_main, d))
+        self._finish_multi_edit(results)
+
+    def _finish_multi_edit(self, results):
+        """Perbarui kursor setelah edit multi. results = [(posisi, is_main,
+        delta_karakter)]; posisi yang lebih besar digeser oleh edit yang
+        posisinya lebih kecil, jadi koreksi dilakukan lewat akumulasi delta."""
+        items = sorted(results)
+        acc = 0
+        corrected = []
+        for q, is_main, d in items:
+            corrected.append((q + acc, is_main))
+            acc += d
+        corrected.sort()
+        main_pos = next(p for p, is_main in corrected if is_main)
+        self._extra_cursors = [[p, p] for p, is_main in corrected
+                               if not is_main]
+        c = self.textCursor()
+        c.setPosition(main_pos)
+        self.setTextCursor(c)
+        self._refresh_extra()
+
     def toggle_comment(self):
         prefix = _COMMENT_TOGGLE.get(self._language, "//")
         cursor = self.textCursor()
@@ -421,6 +645,7 @@ class CodeEditor(QPlainTextEdit):
             return False, str(exc)
         text, encoding = _decode(raw)
         self.setPlainText(text)
+        self._extra_cursors = []
         self._file_path = path
         self._encoding = encoding
         self.set_language(detect_language(path))
@@ -533,6 +758,7 @@ class CodeEditor(QPlainTextEdit):
             c.endEditBlock()
             count += 1
             pos = c.position() if c.position() > pos else pos + 1
+        self._extra_cursors = []
         self._refresh_extra()
         return count
 
@@ -588,6 +814,18 @@ class CodeEditor(QPlainTextEdit):
             c.setPosition(e, QTextCursor.MoveMode.KeepAnchor)
             sel.cursor = c
             extras.append(sel)
+        # kursor multi (Ctrl+D) — seleksi sekunder lebih redup dari utama
+        if self._extra_cursors:
+            extra_color = QColor(t["selection"])
+            extra_color.setAlpha(120)
+            for s, e in self._extra_cursors:
+                sel = QTextEdit.ExtraSelection()
+                sel.format.setBackground(extra_color)
+                c = QTextCursor(self.document())
+                c.setPosition(s)
+                c.setPosition(e, QTextCursor.MoveMode.KeepAnchor)
+                sel.cursor = c
+                extras.append(sel)
         self.setExtraSelections(extras)
 
     def _bracket_pairs(self):
@@ -646,6 +884,12 @@ class CodeEditor(QPlainTextEdit):
         text = self.toPlainText()
         words = len(text.split()) if text.strip() else 0
         return words, len(text)
+
+    def mousePressEvent(self, event):
+        # klik menempatkan ulang kursor — akhiri mode multi-kursor
+        if self._extra_cursors:
+            self._clear_extra_cursors()
+        super().mousePressEvent(event)
 
     def focusInEvent(self, event):
         self.focused.emit()

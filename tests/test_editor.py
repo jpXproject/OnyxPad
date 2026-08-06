@@ -180,6 +180,170 @@ def test_tab_stop_not_before_opening_quote(make_editor):
     assert ed.textCursor().position() == 8
 
 
+# ------------------------------------------------------- multi-kursor
+CTRL = Qt.KeyboardModifier.ControlModifier
+
+
+def ctrl_d(ed):
+    press(ed, "", Qt.Key.Key_D, CTRL)
+
+
+def test_ctrl_d_selects_word_under_cursor(make_editor):
+    ed = make_editor()
+    ed.setPlainText("foo bar baz")
+    set_cursor(ed, 0)
+    ctrl_d(ed)
+    c = ed.textCursor()
+    assert c.hasSelection()
+    assert (c.selectionStart(), c.selectionEnd()) == (0, 3)
+
+
+def test_ctrl_d_word_under_cursor_at_line_end(make_editor):
+    ed = make_editor()
+    ed.setPlainText("foo bar")
+    set_cursor(ed, 3)  # tepat di akhir 'foo'
+    ctrl_d(ed)
+    c = ed.textCursor()
+    assert (c.selectionStart(), c.selectionEnd()) == (0, 3)
+
+
+def test_ctrl_d_adds_next_occurrence(make_editor):
+    ed = make_editor()
+    ed.setPlainText("foo bar foo baz foo")
+    set_cursor(ed, 0)
+    ctrl_d(ed)
+    ctrl_d(ed)
+    c = ed.textCursor()
+    assert (c.selectionStart(), c.selectionEnd()) == (8, 11)
+    assert ed._extra_cursors == [[0, 3]]
+
+
+def test_ctrl_d_no_duplicate_when_wrapping(make_editor):
+    ed = make_editor()
+    ed.setPlainText("foo bar")
+    set_cursor(ed, 0)
+    for _ in range(3):
+        ctrl_d(ed)
+    c = ed.textCursor()
+    assert (c.selectionStart(), c.selectionEnd()) == (0, 3)
+    assert ed._extra_cursors == []
+
+
+def test_ctrl_d_from_manual_selection(make_editor):
+    ed = make_editor()
+    ed.setPlainText("ab ab")
+    set_cursor(ed, 0)
+    c = ed.textCursor()
+    c.setPosition(2, QTextCursor.MoveMode.KeepAnchor)
+    ed.setTextCursor(c)
+    ctrl_d(ed)
+    c = ed.textCursor()
+    assert (c.selectionStart(), c.selectionEnd()) == (3, 5)
+
+
+def test_multi_cursor_typing_replaces_all(make_editor):
+    ed = make_editor()
+    ed.setPlainText("foo foo")
+    set_cursor(ed, 0)
+    ctrl_d(ed)
+    ctrl_d(ed)
+    press(ed, "x", Qt.Key.Key_X)
+    assert ed.toPlainText() == "x x"
+    assert not ed.textCursor().hasSelection()
+    assert ed.cursor_count() == 2
+
+
+def test_multi_cursor_backspace(make_editor):
+    ed = make_editor()
+    ed.setPlainText("foo foo")
+    set_cursor(ed, 0)
+    ctrl_d(ed)
+    ctrl_d(ed)
+    press(ed, "\b", Qt.Key.Key_Backspace)
+    assert ed.toPlainText() == " "
+
+
+def test_multi_cursor_pair_wraps_each_selection(make_editor):
+    ed = make_editor()
+    ed.setPlainText("foo foo")
+    set_cursor(ed, 0)
+    ctrl_d(ed)
+    ctrl_d(ed)
+    press(ed, "(", Qt.Key.Key_ParenLeft)
+    assert ed.toPlainText() == "(foo) (foo)"
+    assert not ed.textCursor().hasSelection()
+
+
+def test_multi_cursor_escape_keeps_main_selection(make_editor):
+    ed = make_editor()
+    ed.setPlainText("foo foo")
+    set_cursor(ed, 0)
+    ctrl_d(ed)
+    ctrl_d(ed)
+    press(ed, "", Qt.Key.Key_Escape)
+    assert ed._extra_cursors == []
+    assert ed.textCursor().hasSelection()
+
+
+def test_multi_cursor_arrow_exits_mode(make_editor):
+    ed = make_editor()
+    ed.setPlainText("foo foo")
+    set_cursor(ed, 0)
+    ctrl_d(ed)
+    ctrl_d(ed)
+    press(ed, "", Qt.Key.Key_Right)
+    assert ed._extra_cursors == []
+
+
+def test_ctrl_u_removes_last_cursor(make_editor):
+    ed = make_editor()
+    ed.setPlainText("foo foo foo")
+    set_cursor(ed, 0)
+    ctrl_d(ed)
+    ctrl_d(ed)
+    ctrl_d(ed)
+    press(ed, "", Qt.Key.Key_U, CTRL)
+    assert ed._extra_cursors == [[0, 3]]
+    c = ed.textCursor()
+    assert (c.selectionStart(), c.selectionEnd()) == (4, 7)
+
+
+def test_multi_cursor_delete(make_editor):
+    ed = make_editor()
+    ed.setPlainText("foo foo")
+    set_cursor(ed, 0)
+    ctrl_d(ed)
+    ctrl_d(ed)
+    press(ed, "", Qt.Key.Key_Delete)
+    assert ed.toPlainText() == " "
+
+
+def test_multi_cursor_enter(make_editor):
+    ed = make_editor()
+    ed.setPlainText("foo foo")
+    set_cursor(ed, 0)
+    ctrl_d(ed)
+    ctrl_d(ed)
+    press(ed, "\r", Qt.Key.Key_Return)
+    # spasi di tengah "foo foo" tetap tersisa
+    assert ed.toPlainText() == "\n \n"
+
+
+def test_ctrl_d_after_typing_drops_stale_cursors(make_editor):
+    """Kursor ekstra kosong yang basi tidak boleh menyisipkan karakter ekstra."""
+    ed = make_editor()
+    ed.setPlainText("foo foo")
+    set_cursor(ed, 0)
+    ctrl_d(ed)
+    ctrl_d(ed)
+    press(ed, "x", Qt.Key.Key_X)       # kursor jadi kosong: "x x"
+    ctrl_d(ed)                          # mulai urutan baru (seleksi kata)
+    ctrl_d(ed)                          # tambah kemunculan berikutnya
+    press(ed, "z", Qt.Key.Key_Z)
+    assert ed.toPlainText() == "z z"
+    assert ed.cursor_count() == 2
+
+
 # ---------------------------------------------------------------- indent
 def test_tab_indents_four_spaces(make_editor):
     ed = make_editor(tab_width=4)
