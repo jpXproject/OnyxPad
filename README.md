@@ -25,6 +25,20 @@ replace, tema lengkap, sesi otomatis, dan penjelajah folder.
 python main.py
 ```
 
+## Menjalankan Test
+
+Suite test otomatis (pytest, berjalan headless via Qt offscreen):
+
+```bash
+pip install pytest
+pytest
+```
+
+Mencakup: editor (auto-pair, indent, komentar, I/O file), find & replace
+(literal, case, kata utuh, regex), syntax highlighting, tema/QSS, sistem split
+panes (split, navigasi, tutup, sesi), dan integrasi aplikasi (tema, sesi,
+recent files, scan folder).
+
 ## Membangun .exe (opsional)
 
 ```bash

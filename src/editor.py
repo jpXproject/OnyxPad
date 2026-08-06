@@ -56,7 +56,7 @@ class CodeEditor(QPlainTextEdit):
         self.setTabStopDistance(
             QFontMetricsF(self.font()).horizontalAdvance(" ") * self._tab_width)
         self.setLineWrapMode(
-            QPlainTextEdit.LineWrapMode.WrapAtWordBoundaryOrAnywhere if wrap
+            QPlainTextEdit.LineWrapMode.WidgetWidth if wrap
             else QPlainTextEdit.LineWrapMode.NoWrap)
         self.setCenterOnScroll(True)
         self.document().setDocumentMargin(8)
@@ -71,6 +71,9 @@ class CodeEditor(QPlainTextEdit):
         self._apply_editor_colors()
         self._update_line_area_width()
         self._refresh_extra()
+        # setDocumentMargin()/setStyleSheet() menandai dokumen sebagai modified
+        # — editor baru harus tampil bersih (tanpa titik "belum disimpan").
+        self.document().setModified(False)
 
     # ------------------------------------------------------------------ fonts
     def set_font_family(self, family):
@@ -199,25 +202,46 @@ class CodeEditor(QPlainTextEdit):
 
     def _indent_selection(self, direction):
         cursor = self.textCursor()
-        cursor.beginEditBlock()
+        doc = self.document()
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
-        cursor.setPosition(start)
-        cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
-        doc = self.document()
-        while cursor.position() <= end and not cursor.atEnd():
+        first = doc.findBlock(start)
+        last = doc.findBlock(end)
+        # jangan ikutkan blok kosong terakhir (paragraf penutup QPlainTextEdit)
+        if last.text() == "" and last == doc.lastBlock() and first != last:
+            last = last.previous()
+        first_num = first.blockNumber()
+        last_num = max(first_num, last.blockNumber())
+        cursor.beginEditBlock()
+        for n in range(first_num, last_num + 1):
+            block = doc.findBlockByNumber(n)
+            c = QTextCursor(block)
+            c.movePosition(QTextCursor.MoveOperation.StartOfBlock)
             if direction > 0:
-                cursor.insertText(" " * self._tab_width)
-                end += self._tab_width
+                c.insertText(" " * self._tab_width)
             else:
-                block_text = cursor.block().text()
+                block_text = c.block().text()
                 if block_text.startswith(" " * self._tab_width):
-                    for _ in range(self._tab_width):
-                        cursor.deleteChar()
-                    end -= self._tab_width
-            cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
+                    c.movePosition(QTextCursor.MoveOperation.Right,
+                                   QTextCursor.MoveMode.KeepAnchor,
+                                   self._tab_width)
+                    c.removeSelectedText()
         cursor.endEditBlock()
-        self.setTextCursor(cursor)
+        self._restore_block_selection(first_num, last_num)
+
+    def _restore_block_selection(self, first_num, last_num):
+        """Seleksi ulang dari awal blok pertama sampai akhir blok terakhir."""
+        doc = self.document()
+        first = doc.findBlockByNumber(first_num)
+        last = doc.findBlockByNumber(last_num)
+        if not first.isValid() or not last.isValid():
+            return
+        c = QTextCursor(first)
+        c.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+        end = QTextCursor(last)
+        end.movePosition(QTextCursor.MoveOperation.EndOfBlock)
+        c.setPosition(end.position(), QTextCursor.MoveMode.KeepAnchor)
+        self.setTextCursor(c)
 
     def _handle_dedent(self):
         cursor = self.textCursor()
@@ -272,27 +296,43 @@ class CodeEditor(QPlainTextEdit):
     def toggle_comment(self):
         prefix = _COMMENT_TOGGLE.get(self._language, "//")
         cursor = self.textCursor()
-        cursor.beginEditBlock()
+        doc = self.document()
         start = cursor.selectionStart()
         end = cursor.selectionEnd()
-        cursor.setPosition(start)
-        cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
-        lines = []
-        while cursor.position() <= end and not cursor.atEnd():
-            lines.append(cursor.block())
-            cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
+        has_sel = cursor.hasSelection()
+        first = doc.findBlock(start)
+        last = doc.findBlock(end)
+        # jangan ikutkan blok kosong terakhir (paragraf penutup QPlainTextEdit)
+        if last.text() == "" and last == doc.lastBlock() and first != last:
+            last = last.previous()
+        first_num = first.blockNumber()
+        last_num = max(first_num, last.blockNumber())
+
+        lines = [doc.findBlockByNumber(n) for n in range(first_num,
+                                                         last_num + 1)]
         all_commented = all(
             b.text().strip().startswith(prefix) for b in lines)
-        for block in lines:
+        cursor.beginEditBlock()
+        for n in range(first_num, last_num + 1):
+            block = doc.findBlockByNumber(n)
             c = QTextCursor(block)
             c.movePosition(QTextCursor.MoveOperation.StartOfBlock)
             if all_commented:
+                text = c.block().text()
+                # lewati spasi di awal baris, baru hapus prefix komentar
+                while c.positionInBlock() < len(text) and \
+                        text[c.positionInBlock()].isspace():
+                    c.movePosition(QTextCursor.MoveOperation.Right)
                 c.movePosition(QTextCursor.MoveOperation.Right,
                                QTextCursor.MoveMode.KeepAnchor, len(prefix))
                 c.removeSelectedText()
             else:
                 c.insertText(prefix)
         cursor.endEditBlock()
+
+        # pulihkan seleksi (kira-kira) mencakup baris yang disentuh
+        if has_sel:
+            self._restore_block_selection(first_num, last_num)
 
     def go_to_line(self, line_number):
         if line_number < 1:
@@ -317,11 +357,16 @@ class CodeEditor(QPlainTextEdit):
         self._line_area.update()
 
     def _apply_editor_colors(self):
+        # setStyleSheet() menandai dokumen sebagai modified — pertahankan
+        # status aslinya agar tab baru tidak terlihat "belum disimpan".
+        doc = self.document()
+        was_modified = doc.isModified()
         t = self._theme
         self.setStyleSheet(
             f"QPlainTextEdit {{ background: {t['bg']}; color: {t['fg']}; "
             f"selection-background-color: {t['selection']}; "
             f"selection-color: {t['fg']}; }}")
+        doc.setModified(was_modified)
 
     def set_language(self, lang):
         self._language = lang if lang in LANG_NAMES else "plain"

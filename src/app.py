@@ -4,8 +4,8 @@ import json
 import os
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QColor, QFont, QFontDatabase, QIcon, QKeySequence
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFontDatabase, QIcon, QKeySequence
 from PySide6.QtWidgets import (QApplication, QDialog, QDockWidget, QFileDialog,
                                QHBoxLayout, QInputDialog, QLabel, QLineEdit,
                                QListWidget, QMainWindow, QMessageBox,
@@ -338,7 +338,8 @@ class NotepadBlack(QMainWindow):
         edit.setFocus()
         dlg.exec()
 
-    def _scan_folder(self, root, limit=800):
+    @staticmethod
+    def _scan_folder(root, limit=800):
         out = []
         for dirpath, dirnames, filenames in os.walk(root):
             dirnames[:] = [d for d in dirnames
@@ -421,7 +422,7 @@ class NotepadBlack(QMainWindow):
 
     def toggle_wrap(self):
         self._wrap = not self._wrap
-        mode = (QPlainTextEdit.LineWrapMode.WrapAtWordBoundaryOrAnywhere
+        mode = (QPlainTextEdit.LineWrapMode.WidgetWidth
                 if self._wrap else QPlainTextEdit.LineWrapMode.NoWrap)
         for ed in self.manager.all_editors():
             ed.setLineWrapMode(mode)

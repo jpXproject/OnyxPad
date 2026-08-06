@@ -210,10 +210,13 @@ class SplitManager(QWidget):
             wrapper = QSplitter(orientation)
             wrapper.setChildrenCollapsible(False)
             wrapper.setHandleWidth(5)
-            parent.replaceWidget(idx, wrapper)
-            parent.setSizes(sizes)
+            # catatan: pakai insertWidget, bukan replaceWidget — replaceWidget
+            # tidak mengalihkan kepemilikan ke C++ sehingga widget bisa terhapus
+            # saat referensi Python-nya hilang (bug PySide6/shiboken).
+            parent.insertWidget(idx, wrapper)
             wrapper.addWidget(anchor)
             wrapper.addWidget(new_pane)
+            parent.setSizes(sizes)
             half = max(60, size // 2)
             wrapper.setSizes([half, size - half])
 
@@ -244,15 +247,19 @@ class SplitManager(QWidget):
         if splitter is None:
             return
         if splitter.count() == 0:
-            splitter.deleteLater()
+            # jangan hapus splitter akar — biarkan kosong agar bisa diisi lagi
+            if isinstance(splitter.parentWidget(), QSplitter):
+                splitter.deleteLater()
             return
         if splitter.count() == 1 and isinstance(splitter.widget(0), QSplitter):
             only = splitter.widget(0)
             grandparent = splitter.parentWidget()
             if isinstance(grandparent, QSplitter):
                 idx = grandparent.indexOf(splitter)
-                grandparent.replaceWidget(idx, only)
                 sizes = grandparent.sizes()
+                # angkat satu-satunya anak ke grandparent, lalu buang wrapper
+                splitter.setParent(None)
+                grandparent.insertWidget(idx, only)
                 grandparent.setSizes(sizes)
                 splitter.deleteLater()
 
