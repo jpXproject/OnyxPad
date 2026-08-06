@@ -14,20 +14,15 @@
 A dark, feature-packed notepad built with **PySide6 (Qt6)**. Split panes in a
 tmux / VS Code style, per-pane tabs, multi-language syntax highlighting,
 find & replace, **multi-cursor editing**, 7 themes, auto session restore,
-and a built-in file explorer.
+and a built-in file explorer. The app opens in the signature **Dracula
+theme** — here's a live recording:
 
-![OnyxPad hero screenshot](docs/screenshots/hero-dark.png)
+<p align="center">
+  <img src="docs/demo/demo.gif" alt="OnyxPad — live feature demo" width="100%">
+</p>
 
----
-
-## Demo
-
-A live recording of the feature tour — typing with auto-pair, multi-cursor
-editing (`Ctrl+D`), search, split panes, and theme switching:
-
-<video controls loop autoplay muted src="docs/demo/demo.mp4" width="100%"></video>
-
-*[Animated GIF version (works anywhere)](docs/demo/demo.gif)*
+*Feature tour: auto-pair typing, multi-cursor (`Ctrl+D`), search highlight,
+split panes, and theme switching.*
 
 ---
 
@@ -52,10 +47,20 @@ editing (`Ctrl+D`), search, split panes, and theme switching:
 
 ### Themes
 
-7 hand-tuned themes, switchable from the menu (and remembered). The **Light**
-theme for daylight work:
+7 hand-tuned themes, switchable from the menu and remembered across
+sessions. All six dark themes (the **Light** theme is available in the menu):
 
-![Light theme screenshot](docs/screenshots/light.png)
+| **Dracula (Default)** — the signature look | **One Dark** |
+|---|---|
+| <img src="docs/screenshots/theme-dracula-default.png" width="100%"> | <img src="docs/screenshots/theme-one-dark.png" width="100%"> |
+
+| **Monokai** | **Matrix Green** |
+|---|---|
+| <img src="docs/screenshots/theme-monokai.png" width="100%"> | <img src="docs/screenshots/theme-matrix-green.png" width="100%"> |
+
+| **Nord** | **Solarized Dark** |
+|---|---|
+| <img src="docs/screenshots/theme-nord.png" width="100%"> | <img src="docs/screenshots/theme-solarized-dark.png" width="100%"> |
 
 ---
 

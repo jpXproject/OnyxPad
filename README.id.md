@@ -14,20 +14,15 @@
 Notepad hitam bertema gelap yang di-upgrade penuh, dibangun dengan **PySide6
 (Qt6)**. Split panes bertingkat gaya tmux / VS Code, tab per pane, syntax
 highlighting multi-bahasa, find &amp; replace, **edit multi-kursor**, 7 tema,
-sesi otomatis, dan penjelajah folder.
+sesi otomatis, dan penjelajah folder. Aplikasi terbuka dengan tema khas
+**Dracula** — ini rekaman langsungnya:
 
-![Tangkapan layar utama OnyxPad](docs/screenshots/hero-dark.png)
+<p align="center">
+  <img src="docs/demo/demo.gif" alt="OnyxPad — demo fitur" width="100%">
+</p>
 
----
-
-## Demo
-
-Rekaman tur fitur — mengetik dengan auto-pair, multi-kursor (`Ctrl+D`),
-pencarian, split panes, dan ganti tema:
-
-<video controls loop autoplay muted src="docs/demo/demo.mp4" width="100%"></video>
-
-*[Versi GIF animasi (bisa diputar di mana saja)](docs/demo/demo.gif)*
+*Tur fitur: mengetik dengan auto-pair, multi-kursor (`Ctrl+D`), highlight
+pencarian, split panes, dan ganti tema.*
 
 ---
 
@@ -52,10 +47,20 @@ pencarian, split panes, dan ganti tema:
 
 ### Tema
 
-7 tema yang disetel halus, bisa diganti dari menu (dan diingat). Tema
-**Light** untuk kerja di siang hari:
+7 tema yang disetel halus, bisa diganti dari menu dan diingat lintas sesi.
+Enam tema gelap berikut (tema **Light** tersedia di menu):
 
-![Tangkapan layar tema Light](docs/screenshots/light.png)
+| **Dracula (Default)** — tampilan khas | **One Dark** |
+|---|---|
+| <img src="docs/screenshots/theme-dracula-default.png" width="100%"> | <img src="docs/screenshots/theme-one-dark.png" width="100%"> |
+
+| **Monokai** | **Matrix Green** |
+|---|---|
+| <img src="docs/screenshots/theme-monokai.png" width="100%"> | <img src="docs/screenshots/theme-matrix-green.png" width="100%"> |
+
+| **Nord** | **Solarized Dark** |
+|---|---|
+| <img src="docs/screenshots/theme-nord.png" width="100%"> | <img src="docs/screenshots/theme-solarized-dark.png" width="100%"> |
 
 ---
 

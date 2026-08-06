@@ -8,6 +8,7 @@ Hasil di: docs/screenshots/*.png
 """
 
 import os
+import re
 import sys
 import tempfile
 import time
@@ -29,6 +30,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from PySide6.QtWidgets import QApplication
 
 from src.app import OnyxPad
+from src.themes import THEME_ORDER
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "docs", "screenshots")
@@ -84,23 +86,24 @@ def split_panes(app):
     win.close()
 
 
-def light_theme(app):
-    """Tema Light + editor demo.py."""
-    win = new_window(app, "Light")
-    win.open_file(DEMO)
-    win.search_bar.show_find()
-    win.search_bar.find_edit.setText("Cache")
-    win.search_bar.find_edit.returnPressed.emit()
-    pump(app)
-    save(win, "light.png")
-    win.close()
+def theme_gallery(app):
+    """Satu screenshot per tema gelap (Light tidak disertakan di galeri)."""
+    for name in THEME_ORDER:
+        if name == "Light":
+            continue
+        win = new_window(app, name)
+        win.open_file(DEMO)
+        pump(app)
+        slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+        save(win, f"theme-{slug}.png")
+        win.close()
 
 
 def main():
     app = QApplication(sys.argv)
     hero_dark(app)
     split_panes(app)
-    light_theme(app)
+    theme_gallery(app)
     print("Selesai. Screenshot ada di docs/screenshots/")
 
 

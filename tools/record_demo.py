@@ -150,7 +150,13 @@ def step_split():
 
 
 def step_theme():
+    """Tunjukkan ganti tema, lalu kembali ke tema standar (ciri khas app)
+    agar GIF berloop mulus dari tampilan awal yang sama."""
     win.apply_theme("One Dark")
+    pump(app)
+    snap()
+    hold(8)
+    win.apply_theme("Dracula (Default)")
     pump(app)
     snap()
     hold(12)
