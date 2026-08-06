@@ -1,0 +1,146 @@
+# OnyxPad — Editor Split Panes Pro
+
+**[English](README.md)** · [Laporkan Bug / Usulkan Fitur](https://github.com/jpXproject/OnyxPad/issues)
+
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![GUI](https://img.shields.io/badge/GUI-PySide6%20(Qt6)-41CD52?logo=qt&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-148%20passed-brightgreen)
+
+Notepad hitam bertema gelap yang di-upgrade penuh, dibangun dengan **PySide6
+(Qt6)**. Split panes bertingkat gaya tmux / VS Code, tab per pane, syntax
+highlighting multi-bahasa, find &amp; replace, **edit multi-kursor**, 7 tema,
+sesi otomatis, dan penjelajah folder.
+
+![Tangkapan layar utama OnyxPad](docs/screenshots/hero-dark.png)
+
+---
+
+## Demo
+
+Rekaman tur fitur — mengetik dengan auto-pair, multi-kursor (`Ctrl+D`),
+pencarian, split panes, dan ganti tema:
+
+<video controls loop autoplay muted src="docs/demo/demo.mp4" width="100%"></video>
+
+*[Versi GIF animasi (bisa diputar di mana saja)](docs/demo/demo.gif)*
+
+---
+
+## Fitur
+
+| Area | Fitur |
+|---|---|
+| **Split panes** | `Ctrl+\` split kanan, `Ctrl+'` split bawah — bisa bertingkat, gaya tmux/VS Code |
+| **Tab per pane** | Setiap pane punya tab sendiri (drag untuk pindah posisi) |
+| **Syntax highlighting** | Python, JS/TS, HTML, CSS, C/C++, Java, JSON, Markdown, Shell, YAML — auto-deteksi dari ekstensi |
+| **Find & replace** | `Ctrl+F` / `Ctrl+H`, opsi Aa / kata utuh / regex, hitung jumlah cocok, Ganti Semua |
+| **Multi-kursor** | `Ctrl+D` pilih kata / kemunculan berikutnya, `Ctrl+U` buang kursor terakhir, `Esc` selesai — ketik/backspace/Enter berlaku di semua kursor sekaligus |
+| **Editor pro** | Nomor baris, highlight baris aktif, pencocokan kurung, auto-pair `(){}[]""` (termasuk overtype kutip), tab stop (Tab lompat keluar pasangan), auto-indent, komentari `Ctrl+/` |
+| **Tema** | 7 tema: Dracula, One Dark, Monokai, Matrix Green, Nord, Solarized Dark, Light — diingat lintas sesi |
+| **File explorer** | Sidebar (`Ctrl+Shift+O`), klik dua kali untuk buka, menu kanan: buka di pane baru |
+| **Sesi** | Layout split + file terbuka + tema dipulihkan otomatis (`~/.onyxpad/settings.json`) |
+| **Lainnya** | Buka Cepat `Ctrl+P`, recent files, drag & drop file, status bar (Ln/Col/kata/encoding/bahasa/zoom/versi), zoom `Ctrl+wheel` |
+
+### Split panes
+
+![Tangkapan layar split panes](docs/screenshots/split-panes.png)
+
+### Tema
+
+7 tema yang disetel halus, bisa diganti dari menu (dan diingat). Tema
+**Light** untuk kerja di siang hari:
+
+![Tangkapan layar tema Light](docs/screenshots/light.png)
+
+---
+
+## Memulai
+
+### Prasyarat
+
+- **Python 3.10+** dan **PySide6** (`pip install PySide6`)
+
+### Menjalankan dari source
+
+```bash
+git clone https://github.com/jpXproject/OnyxPad.git
+cd OnyxPad
+pip install PySide6
+python main.py
+```
+
+Atau bangun `dist/OnyxPad.exe` sendiri (lihat bagian Build di bawah).
+
+### Pintasan
+
+| Tombol | Aksi |
+|---|---|
+| `Ctrl+\` / `Ctrl+'` | Split kanan / split bawah |
+| `Ctrl+Tab` / `Alt+←↑→↓` | Pane berikutnya / fokus pane ke arah |
+| `Ctrl+D` / `Ctrl+U` | Tambah kursor berikutnya / buang kursor terakhir |
+| `Ctrl+F` / `Ctrl+H` / `F3` | Cari / Ganti / Cari berikutnya |
+| `Ctrl+S` / `Ctrl+Shift+S` / `Ctrl+Alt+S` | Simpan / Simpan sebagai / Simpan semua |
+| `Ctrl+T` / `Ctrl+W` / `Ctrl+Shift+W` | Tab baru / tutup tab / tutup pane |
+| `Ctrl+P` / `Ctrl+G` / `Ctrl+/` | Buka cepat / pergi ke baris / komentari |
+| `Ctrl+wheel` / `Ctrl+0` | Zoom / reset zoom |
+| `F1` | Referensi pintasan lengkap (di dalam app) |
+
+---
+
+## Pengembangan
+
+### Menjalankan test
+
+```bash
+pip install pytest pytest-qt
+pytest
+```
+
+148 test mencakup: editor (auto-pair, indentasi, komentar, multi-kursor,
+I/O file), find & replace, UI SearchBar (pytest-qt), syntax highlighting,
+tema/QSS, sistem split panes, dan integrasi aplikasi.
+
+### Membangun .exe mandiri
+
+```bash
+pip install pyinstaller
+python build.py            # satu file  -> dist/OnyxPad.exe
+python build.py folder     # folder     -> dist/OnyxPad/OnyxPad.exe
+```
+
+Di Windows cukup klik dua kali **`build.bat`** (build satu file). Nama & versi
+aplikasi dibaca dari `src/version.py` dan tampil di status bar serta dialog
+Tentang.
+
+### Mengambil ulang screenshot / video demo
+
+```bash
+python tools/take_screenshots.py    # docs/screenshots/*.png (Qt offscreen)
+python tools/record_demo.py         # docs/demo/demo.mp4 + demo.gif (butuh ffmpeg)
+```
+
+Keduanya merender aplikasi secara headless dan menangkap kondisi UI asli —
+tanpa edit manual.
+
+### Struktur proyek
+
+```
+main.py              Entry point
+src/
+  app.py             Jendela utama, menu, status bar, sesi
+  editor.py          Editor kode: multi-kursor, auto-pair, tab stop, komentar
+  panes.py           Pengelola split pane bertingkat (gaya tmux)
+  search.py          Bar cari & ganti
+  syntax.py          Syntax highlighting multi-bahasa
+  themes.py          7 tema + builder QSS global
+  filetree.py        Sidebar penjelajah file
+  version.py         Nama, tagline, versi aplikasi
+tests/               Suite pytest (148 test)
+tools/               Skrip tangkap screenshot & video demo
+docs/                Screenshot, media demo, file contoh
+```
+
+---
+
+Dibuat dengan ❤️ menggunakan PySide6 (Qt6).
