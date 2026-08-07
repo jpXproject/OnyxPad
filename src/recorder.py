@@ -6,14 +6,70 @@ Modul ini menyediakan:
 """
 
 import json
+import queue
 import time
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QThread, QMutex, QMutexLocker
 from PySide6.QtGui import QFont, QIcon, QKeySequence, QTextCursor
 from PySide6.QtWidgets import (QDialog, QFileDialog, QHBoxLayout, QLabel,
                                 QMessageBox, QPushButton, QSlider,
                                 QSpinBox, QStyle, QPlainTextEdit, QVBoxLayout, QWidget)
+
+
+class PTYBufferWorker(QThread):
+    """QThread worker untuk memproses PTY buffer tracking dan frame asciinema secara terpisah dari GUI main loop."""
+
+    def __init__(self, recorder, parent=None):
+        super().__init__(parent)
+        self.recorder = recorder
+        self._queue = queue.Queue()
+        self.start_time = None
+        self._mutex = QMutex()
+
+    def start_recording(self, start_time: float):
+        with QMutexLocker(self._mutex):
+            self.start_time = start_time
+            while not self._queue.empty():
+                try:
+                    self._queue.get_nowait()
+                except queue.Empty:
+                    break
+        if not self.isRunning():
+            self.start()
+
+    def enqueue(self, event_type: str, text: str):
+        if not text:
+            return
+        timestamp = time.time()
+        self._queue.put((timestamp, event_type, text))
+
+    def run(self):
+        while True:
+            try:
+                item = self._queue.get(timeout=0.05)
+            except queue.Empty:
+                with QMutexLocker(self._mutex):
+                    if self.start_time is None and self._queue.empty():
+                        break
+                continue
+
+            if item is None:
+                break
+
+            timestamp, event_type, text = item
+            with QMutexLocker(self._mutex):
+                st = self.start_time
+
+            if st is not None:
+                elapsed = round(timestamp - st, 6)
+                self.recorder._append_frame_from_thread(elapsed, event_type, text)
+
+    def stop_recording(self):
+        self._queue.put(None)
+        self.wait(1000)
+        with QMutexLocker(self._mutex):
+            self.start_time = None
 
 
 class AsciinemaRecorder:
@@ -26,7 +82,23 @@ class AsciinemaRecorder:
         self.is_recording = False
         self.start_time = None
         self.header = {}
-        self.frames = []
+        self._frames = []
+        self._mutex = QMutex()
+        self.worker = PTYBufferWorker(self)
+
+    @property
+    def frames(self):
+        with QMutexLocker(self._mutex):
+            return list(self._frames)
+
+    @frames.setter
+    def frames(self, value):
+        with QMutexLocker(self._mutex):
+            self._frames = list(value)
+
+    def _append_frame_from_thread(self, elapsed: float, event_type: str, text: str):
+        with QMutexLocker(self._mutex):
+            self._frames.append([elapsed, event_type, text])
 
     def start(self, width=None, height=None, title=None):
         if width:
@@ -48,29 +120,32 @@ class AsciinemaRecorder:
                 "TERM": "xterm-256color"
             }
         }
-        self.frames = []
+        with QMutexLocker(self._mutex):
+            self._frames = []
         self.is_recording = True
+        self.worker.start_recording(self.start_time)
 
     def record_output(self, text: str):
         """Merekam event output ('o') dengan timestamp relatif (detik)."""
         if not self.is_recording or self.start_time is None:
             return
-        elapsed = round(time.time() - self.start_time, 6)
-        self.frames.append([elapsed, "o", text])
+        self.worker.enqueue("o", text)
 
     def record_input(self, text: str):
         """Merekam event input ('i') dengan timestamp relatif (detik)."""
         if not self.is_recording or self.start_time is None:
             return
-        elapsed = round(time.time() - self.start_time, 6)
-        self.frames.append([elapsed, "i", text])
+        self.worker.enqueue("i", text)
 
     def stop(self):
         """Menghentikan perekaman dan mengembalikan data asciinema."""
         self.is_recording = False
+        self.worker.stop_recording()
+        with QMutexLocker(self._mutex):
+            frames_copy = list(self._frames)
         return {
             "header": self.header,
-            "frames": list(self.frames)
+            "frames": frames_copy
         }
 
     def save_to_file(self, filepath: str) -> bool:
