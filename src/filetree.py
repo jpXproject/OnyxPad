@@ -28,10 +28,14 @@ class FileTree(QWidget):
         self.tree = QTreeView(self)
         self.tree.setModel(self.model)
         self.tree.setHeaderHidden(True)
+        for col in range(1, 4):
+            self.tree.setColumnHidden(col, True)
+        self.tree.setIndentation(14)
         self.tree.setAnimated(True)
         self.tree.setUniformRowHeights(True)
         self.tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.tree.doubleClicked.connect(self._on_double_click)
+        self.tree.doubleClicked.connect(self._on_item_activated)
+        self.tree.activated.connect(self._on_item_activated)
         self.tree.customContextMenuRequested.connect(self._on_context_menu)
 
         layout = QVBoxLayout(self)
@@ -54,10 +58,12 @@ class FileTree(QWidget):
             return None
         return self.model.filePath(index)
 
-    def _on_double_click(self, index):
+    def _on_item_activated(self, index):
+        if not index or not index.isValid():
+            return
         if not self.model.isDir(index):
             path = self.model.filePath(index)
-            if path:
+            if path and os.path.isfile(path):
                 self.file_activated.emit(path)
 
     def _on_context_menu(self, pos):
@@ -174,8 +180,10 @@ class FileTree(QWidget):
             open(new_path, "w", encoding="utf-8").close()
             # Langsung buka file baru di editor
             self.file_activated.emit(new_path)
-            # Pilih item baru di tree
-            self.tree.setCurrentIndex(self.model.index(new_path))
+            # Pilih & scroll ke item baru di tree
+            idx = self.model.index(new_path)
+            self.tree.setCurrentIndex(idx)
+            self.tree.scrollTo(idx)
         except OSError as e:
             QMessageBox.warning(self, "File Baru Gagal", str(e))
 
@@ -191,8 +199,10 @@ class FileTree(QWidget):
             return
         try:
             os.makedirs(new_path)
-            self.tree.setCurrentIndex(self.model.index(new_path))
+            idx = self.model.index(new_path)
+            self.tree.setCurrentIndex(idx)
             self.tree.expand(self.model.index(target_dir))
+            self.tree.scrollTo(idx)
         except OSError as e:
             QMessageBox.warning(self, "Folder Baru Gagal", str(e))
 

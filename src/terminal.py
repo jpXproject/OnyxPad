@@ -252,6 +252,7 @@ class TerminalPanel(QWidget):
 
         self.process.readyReadStandardOutput.connect(self._read_stdout)
         self.process.readyReadStandardError.connect(self._read_stderr)
+        self.process.finished.connect(self._on_process_finished)
 
         shell_type = self.cb_shell.currentText()
         if sys.platform == "win32":
@@ -263,6 +264,11 @@ class TerminalPanel(QWidget):
             shell_name = "bash" if "Bash" in shell_type else "sh"
             self.process.start(shell_name, ["-i"])
 
+        self.editor.set_input_prompt_pos()
+
+    def _on_process_finished(self, exit_code, exit_status):
+        msg = f"\n\n[Sesi Terminal Berhenti (code {exit_code}) — Klik 'Reset' atau ganti Shell untuk sesi baru]\n"
+        self.parser.append_ansi_text(self.editor, msg)
         self.editor.set_input_prompt_pos()
 
     def restart_terminal(self):

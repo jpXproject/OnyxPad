@@ -60,7 +60,10 @@ docs/demo/frames/
 Thumbs.db
 desktop.ini
 $RECYCLE.BIN/
-*.cab
-*.msi
-*.msm
-*.msp
+# ============================================================
+# Internal Audit & Scratch Assets
+# ============================================================
+AUDIT_*.md
+MICROSOFT_STORE_GUIDE.md
+scratch/
+

@@ -366,16 +366,17 @@ class OnyxPad(QMainWindow):
         # ---------------- Bantuan
         m_help = mb.addMenu("Bantuan")
         self._add(m_help, "Pintasan Keyboard", self.show_shortcuts, "F1")
-        self._add(m_help, f"Tentang {APP_NAME}", self.show_about)
-        m_help.addSeparator()
-        # lambda agar arg 'checked' dari sinyal tidak menimpa manual=True
         self._add(m_help, "Cek Pembaruan…",
                   lambda _checked=False: self.check_for_updates(manual=True))
         m_help.addSeparator()
+        self._add(m_help, "Situs Web Resmi",
+                  lambda: self._open_url("https://github.com/jpXproject/OnyxPad"))
         self._add(m_help, "Repositori GitHub",
                   lambda: self._open_url(APP_REPO_URL))
         self._add(m_help, f"Author: {APP_AUTHOR}",
                   lambda: self._open_url(APP_AUTHOR_URL))
+        m_help.addSeparator()
+        self._add(m_help, f"Tentang {APP_NAME}", self.show_about)
 
     def _add(self, menu, label, slot, shortcut=None):
         act = menu.addAction(label, slot)
@@ -777,7 +778,12 @@ class OnyxPad(QMainWindow):
     # ============================================================ status
     def _refresh_status(self, *_):
         ed = self.manager.active_editor()
-        if ed is None:
+        if ed is None or not hasattr(ed, 'cursor_info'):
+            self.sb_line.setText("")
+            self.sb_sel.setText("")
+            self.sb_stats.setText("")
+            self.sb_lang.setText("")
+            self.setWindowTitle(f"{APP_NAME} — Pro")
             return
         line, col, sel = ed.cursor_info()
         words, chars = ed.stats()
@@ -790,7 +796,7 @@ class OnyxPad(QMainWindow):
         self.sb_lang.setText(f"{lang} · {ed.set_encoding_name()} · "
                              f"{int(ed.zoom_level()) or 100}%")
         name = ed.display_name()
-        star = " ●" if ed.document().isModified() else ""
+        star = " ●" if hasattr(ed, 'document') and ed.document().isModified() else ""
         self.setWindowTitle(f"{APP_NAME} — {name}{star}")
 
     # ============================================================ recent
