@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OnyxPad Pro — The Terminal-Integrated Multiplexing Text Editor</title>
+  <meta name="description" content="OnyxPad Pro: High-performance PySide6 text editor dengan split-panes bertingkat gaya tmux, PTY terminal, perekam Asciinema, dan 7 tema dark kontras tinggi.">
+  <link rel="icon" href="../favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="antigravity-dark">
+
+  <!-- Ambient Light Orbs (Google Antigravity Style) -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-glow glow-3"></div>
+
+  <div class="page-container">
+
+    <!-- Top Navigation Header -->
+    <nav class="ag-nav">
+      <div class="ag-brand">
+        <div class="ag-logo"><i class="fa-solid fa-cube"></i></div>
+        <div class="ag-brand-text">
+          <span class="ag-title">OnyxPad <span class="ag-badge">v1.0.2 Pro</span></span>
+          <span class="ag-subtitle">Google Antigravity Inspired Architecture</span>
+        </div>
+      </div>
+
+      <div class="ag-nav-links">
+        <a href="#trust-section" class="nav-item"><i class="fa-solid fa-shield-halved"></i> Keamanan & Trust</a>
+        <a href="#features" class="nav-item">Fitur</a>
+        <a href="#themes" class="nav-item">Tema</a>
+        <a href="https://github.com/jpXproject/OnyxPad" target="_blank" class="ag-btn btn-ghost">
+          <i class="fa-brands fa-github"></i> Repository
+        </a>
+        <a href="https://github.com/jpXproject/OnyxPad/releases/download/v1.0.2/OnyxPad.exe" class="ag-btn btn-primary">
+          <i class="fa-solid fa-download"></i> Unduh Installer (~44 MB)
+        </a>
+      </div>
+    </nav>
+
+    <!-- Hero Section (Google Antigravity Style) -->
+    <header class="ag-hero">
+      <div class="ag-pill">
+        <span class="pill-dot"></span> Inspired by Google Antigravity Design System · Native PySide6 (Qt6)
+      </div>
+
+      <h1 class="hero-title">
+        High-Performance Code Editor<br>
+        <span class="gradient-text">Integrated Terminal & Asciinema Recorder</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        Editor teks modern berbasis Python 3.10+ & Qt6 dengan sistem <i>split-panes multiplexing (tmux-style)</i>, rendering terminal ANSI xterm-256, dan perekam `.cast` v2 berbasis multithreading (`QThread`).
+      </p>
+
+      <!-- Trust Badges Bar (Build User Confidence) -->
+      <div class="trust-bar" id="trust-section">
+        <div class="trust-badge">
+          <i class="fa-solid fa-shield-check trust-icon text-green"></i>
+          <div>
+            <strong>100% Clean & Safe</strong>
+            <span>Verified Virus-Free</span>
+          </div>
+        </div>
+        <div class="trust-badge">
+          <i class="fa-brands fa-windows trust-icon text-blue"></i>
+          <div>
+            <strong>Windows 10/11 Compatible</strong>
+            <span>Win32 & Portable Edition</span>
+          </div>
+        </div>
+        <div class="trust-badge">
+          <i class="fa-solid fa-code-branch trust-icon text-purple"></i>
+          <div>
+            <strong>100% Open Source</strong>
+            <span>MIT License · Transparent Code</span>
+          </div>
+        </div>
+        <div class="trust-badge">
+          <i class="fa-solid fa-user-shield trust-icon text-cyan"></i>
+          <div>
+            <strong>Zero Telemetry</strong>
+            <span>Privasi & Data Lokal Pengguna</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Download Options (Installer vs Portable) -->
+      <div class="download-cards-container">
+        <!-- Option 1: Official Windows Installer (Recommended) -->
+        <div class="dl-card card-recommended">
+          <div class="rec-badge"><i class="fa-solid fa-star"></i> Rekomendasi Pengguna</div>
+          <div class="dl-card-icon"><i class="fa-solid fa-box-archive"></i></div>
+          <h3>Windows Installer Package</h3>
+          <p>Instalasi standar Windows dengan Wizard, Shortcut Desktop, Menu Start, & Uninstaller resmi.</p>
+          <div class="dl-card-meta">
+            <span><i class="fa-solid fa-file-code"></i> OnyxPad_Setup_v1.0.2.exe</span>
+            <span class="text-green">~44 MB · Official Installer</span>
+          </div>
+          <a href="https://github.com/jpXproject/OnyxPad/releases/download/v1.0.2/OnyxPad.exe" class="ag-btn btn-primary btn-full">
+            <i class="fa-solid fa-download"></i> Unduh Official Installer
+          </a>
+        </div>
+
+        <!-- Option 2: Standalone Portable Edition -->
+        <div class="dl-card">
+          <div class="dl-card-icon"><i class="fa-solid fa-bolt"></i></div>
+          <h3>Standalone Portable Edition</h3>
+          <p>Langsung jalankan file `.exe` tanpa instalasi. Cocok untuk flashdisk USB & lingkungan terbatas.</p>
+          <div class="dl-card-meta">
+            <span><i class="fa-solid fa-cube"></i> OnyxPad_Portable_v1.0.2.exe</span>
+            <span class="text-blue">~44 MB · Zero Install Required</span>
+          </div>
+          <a href="https://github.com/jpXproject/OnyxPad/releases/download/v1.0.2/OnyxPad.exe" class="ag-btn btn-ghost btn-full">
+            <i class="fa-solid fa-circle-play"></i> Unduh Portable Executable
+          </a>
+        </div>
+      </div>
+
+    </header>
+
+    <!-- UI Mockup Hero Section -->
+    <section class="mockup-section">
+      <div class="mockup-frame">
+        <img src="onyxpad_hero.jpg" alt="OnyxPad Pro Antigravity Interface" class="mockup-img">
+        <div class="frame-tag tag-top-left"><i class="fa-solid fa-columns"></i> Multiplexing Split Panes</div>
+        <div class="frame-tag tag-top-right"><i class="fa-solid fa-terminal"></i> Asciinema PTY Recorder</div>
+      </div>
+    </section>
+
+    <!-- Features Bento Section -->
+    <section class="ag-section" id="features">
+      <div class="section-title-box">
+        <h2>Arsitektur & Kapabilitas Utama</h2>
+        <p>Semua fitur disajikan secara transparan untuk kenyamanan dan efisiensi alur kerja pengembang.</p>
+      </div>
+
+      <div class="bento-grid">
+        <div class="bento-item bento-wide">
+          <div class="b-icon"><i class="fa-solid fa-border-all"></i></div>
+          <h3>Split-Pane Multiplexing (tmux Style)</h3>
+          <p>Bagi editor secara vertikal (`Ctrl+\`) atau horizontal (`Ctrl+'`) tanpa batas. Setiap pane memuat tab mandiri, autosave sesi, dan navigasi cepat keyboard (`Alt+←↑→↓`).</p>
+        </div>
+
+        <div class="bento-item">
+          <div class="b-icon"><i class="fa-solid fa-terminal"></i></div>
+          <h3>PTY Terminal & Asciinema</h3>
+          <p>Terminal terintegrasi (`Ctrl+\``) dengan eksekusi PTY, warna ANSI xterm-256, dan perekam `.cast` v2 pada `QThread` terpisah.</p>
+        </div>
+
+        <div class="bento-item">
+          <div class="b-icon"><i class="fa-solid fa-image"></i></div>
+          <h3>Preview Gambar & Video</h3>
+          <p>Tampilkan preview file `.png`, `.jpg`, `.svg` dan pemutaran video `.mp4`, `.webm` langsung di dalam tab editor.</p>
+        </div>
+
+        <div class="bento-item">
+          <div class="b-icon"><i class="fa-solid fa-i-cursor"></i></div>
+          <h3>Multi-Cursor & Regex Search</h3>
+          <p>Tambah kursor simultan (`Ctrl+D`), sunting baris cepat, serta cari/ganti teks berbasis RegEx (`Ctrl+F`, `Ctrl+H`).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Themes Gallery Section (Displayed Simultaneously) -->
+    <section class="ag-section" id="themes">
+      <div class="section-title-box">
+        <h2>7 Pilihan Tema Dark Kontras Tinggi</h2>
+        <p>Setiap tema dirancang untuk keterbacaan kode maksimal dan kenyamanan mata.</p>
+      </div>
+
+      <div class="themes-grid">
+        <div class="t-box t-dracula">
+          <div class="t-head">Dracula Theme</div>
+          <pre><code><span class="k">import</span> <span class="f">sys</span>
+<span class="n">win</span> = OnyxPad()
+<span class="n">win</span>.<span class="f">set_theme</span>(<span class="s">"dracula"</span>)</code></pre>
+        </div>
+
+        <div class="t-box t-onedark">
+          <div class="t-head">One Dark Theme</div>
+          <pre><code><span class="k">import</span> <span class="f">sys</span>
+<span class="n">win</span> = OnyxPad()
+<span class="n">win</span>.<span class="f">set_theme</span>(<span class="s">"onedark"</span>)</code></pre>
+        </div>
+
+        <div class="t-box t-monokai">
+          <div class="t-head">Monokai Theme</div>
+          <pre><code><span class="k">import</span> <span class="f">sys</span>
+<span class="n">win</span> = OnyxPad()
+<span class="n">win</span>.<span class="f">set_theme</span>(<span class="s">"monokai"</span>)</code></pre>
+        </div>
+
+        <div class="t-box t-matrix">
+          <div class="t-head">Matrix Green Theme</div>
+          <pre><code><span class="k">import</span> <span class="f">sys</span>
+<span class="n">win</span> = OnyxPad()
+<span class="n">win</span>.<span class="f">set_theme</span>(<span class="s">"matrix"</span>)</code></pre>
+        </div>
+
+        <div class="t-box t-nord">
+          <div class="t-head">Nord Theme</div>
+          <pre><code><span class="k">import</span> <span class="f">sys</span>
+<span class="n">win</span> = OnyxPad()
+<span class="n">win</span>.<span class="f">set_theme</span>(<span class="s">"nord"</span>)</code></pre>
+        </div>
+
+        <div class="t-box t-solarized">
+          <div class="t-head">Solarized Dark Theme</div>
+          <pre><code><span class="k">import</span> <span class="f">sys</span>
+<span class="n">win</span> = OnyxPad()
+<span class="n">win</span>.<span class="f">set_theme</span>(<span class="s">"solarized"</span>)</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="ag-footer">
+      <div class="footer-content">
+        <div class="fc-left">
+          <strong>OnyxPad Pro</strong> — Built with Python 3.10+ & PySide6 (Qt6)
+          <p>© 2026 jpXproject. Open source under MIT License.</p>
+        </div>
+        <div class="fc-right">
+          <a href="https://github.com/jpXproject/OnyxPad/releases/tag/v1.0.2" target="_blank">Rilis v1.0.2</a>
+          <a href="https://github.com/jpXproject/OnyxPad/issues" target="_blank">Laporkan Masalah</a>
+          <a href="https://github.com/jpXproject/OnyxPad" target="_blank">GitHub Repository</a>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
