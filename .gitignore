@@ -1,40 +1,56 @@
 # ============================================================
-# Python
+# Python & Bytecode
 # ============================================================
 __pycache__/
 *.py[cod]
+*$py.class
 *.pyo
 *.pyd
+*.so
 *.egg-info/
 *.egg
+.eggs/
 
-# Virtual environments
+# Virtual Environments
 .venv/
 venv/
 env/
 ENV/
+env.bak/
+venv.bak/
 
 # ============================================================
-# PyInstaller
+# PyInstaller & Build Outputs
 # ============================================================
 build/
 dist/
 *.spec
+*.exe
+*.msi
+*.msix
 
 # ============================================================
-# OnyxPad — sesi & preferensi pengguna
+# OnyxPad App Logs & Local Settings
 # ============================================================
 .onyxpad/
+*.log
+crash.log
 
 # ============================================================
-# Tools output (frame mentah video demo)
+# Testing & Coverage
+# ============================================================
+.pytest_cache/
+.coverage
+htmlcov/
+.cache
+
+# ============================================================
+# Demo Generator Frames
 # ============================================================
 docs/demo/frames/
-docs/demo/demo.gif
-docs/demo/demo.mp4
 
 # ============================================================
-# Editor & OS
+# IDEs & System Garbage
 # ============================================================
 .idea/
 .vscode/
@@ -43,10 +59,8 @@ docs/demo/demo.mp4
 .DS_Store
 Thumbs.db
 desktop.ini
-
-# ============================================================
-# pytest cache
-# ============================================================
-.pytest_cache/
-.coverage
-htmlcov/
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
