@@ -61,10 +61,13 @@ Thumbs.db
 desktop.ini
 $RECYCLE.BIN/
 # ============================================================
-# Internal Audit, Website & Scratch Assets
+# Internal Audit, Internal Scripts & Scratch Assets
 # ============================================================
 AUDIT_*.md
 MICROSOFT_STORE_GUIDE.md
+CLEANUP.bat
+UNTRACK.bat
+workflow.txt
 website/
 scratch/
 
