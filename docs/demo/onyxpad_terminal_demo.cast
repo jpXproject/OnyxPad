@@ -1,0 +1,6 @@
+{"version": 2, "width": 80, "height": 24, "timestamp": 1786068627, "title": "OnyxPad Pro Terminal & Recorder Showcase", "env": {"SHELL": "powershell", "TERM": "xterm-256color"}}
+[0.100895, "o", "\u001b[36m==================================================\n  Welcome to OnyxPad Pro - Asciinema Recorder  \n==================================================\u001b[0m\n"]
+[0.301587, "i", "dir\n"]
+[0.402167, "o", " Directory of C:\\Users\\XCODE\\notepadblack\n\n[DIR]          src\n[DIR]          tests\n[DIR]          docs\n[DIR]          dist\n-a---          main.py\n-a---          build.py\n\u001b[32mPS C:\\Users\\XCODE\\notepadblack>\u001b[0m "]
+[0.70297, "i", "python -m pytest\n"]
+[0.903665, "o", "======================== test session starts ========================\nplatform win32 -- Python 3.13.7, pytest-8.3.4\ncollected 162 items\n\ntests/test_app.py ........................................ [ 24%]\ntests/test_editor.py ..................................... [ 48%]\ntests/test_terminal_recorder.py .......................... [100%]\n\u001b[32m162 passed in 22.15s\u001b[0m\n"]

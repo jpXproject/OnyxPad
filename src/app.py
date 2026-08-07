@@ -18,8 +18,10 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QDialog, QDialogButtonBo
 from .editor import CodeEditor, detect_language
 from .filetree import FileTree
 from .panes import SplitManager
+from .recorder import AsciinemaPlayerDialog
 from .search import SearchBar
 from .syntax import LANG_NAMES
+from .terminal import TerminalDock
 from .themes import THEMES, THEME_ORDER, build_qss
 from .version import (APP_AUTHOR, APP_AUTHOR_URL, APP_ID, APP_NAME,
                       APP_RELEASES_API, APP_REPO_URL, APP_TAGLINE,
@@ -111,6 +113,11 @@ class OnyxPad(QMainWindow):
         root_folder = self.settings.get("root_folder")
         if root_folder and os.path.isdir(root_folder):
             self.filetree.set_root(root_folder)
+
+        # terminal terintegrasi
+        self.terminal_dock = TerminalDock(
+            theme=self.theme, cwd=root_folder or os.getcwd(), parent=self)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.terminal_dock)
 
         # status bar
         self.sb_line = QLabel("Ln 1, Col 1")
@@ -208,6 +215,7 @@ class OnyxPad(QMainWindow):
             self._theme_actions.append(act)
         m_view.addSeparator()
         m_view.addAction(self.dock.toggleViewAction())
+        m_view.addAction(self.terminal_dock.toggleViewAction())
         self._add(m_view, "Bungkus Kata (editor aktif)", self.toggle_wrap,
                   "Alt+Z")
         m_view.addSeparator()
@@ -216,6 +224,17 @@ class OnyxPad(QMainWindow):
         self._add(m_view, "Reset Zoom", lambda: self._zoom_reset(), "Ctrl+0")
         m_view.addSeparator()
         self._add(m_view, "Preferensi…", self.show_preferences, "Ctrl+,")
+
+        # ---------------- Alat / Tools
+        m_tools = mb.addMenu("Alat")
+        self._add(m_tools, "Buka/Tutup Terminal",
+                  lambda: self.terminal_dock.setVisible(not self.terminal_dock.isVisible()),
+                  "Ctrl+`")
+        self._add(m_tools, "Rekam Terminal Asciinema",
+                  lambda: self.terminal_dock.terminal_panel.toggle_recording(),
+                  "Ctrl+Shift+R")
+        self._add(m_tools, "Putar File Asciinema (.cast)…",
+                  self.show_asciinema_player)
 
         # ---------------- Bantuan
         m_help = mb.addMenu("Bantuan")
@@ -319,6 +338,7 @@ class OnyxPad(QMainWindow):
 
     def open_folder(self, path):
         self.filetree.set_root(path)
+        self.terminal_dock.set_cwd(path)
         self.settings["root_folder"] = path
         self.statusBar().showMessage(f"Folder: {path}", 4000)
 
@@ -594,9 +614,15 @@ class OnyxPad(QMainWindow):
         self.manager.apply_theme(self.theme)
         self.filetree.apply_theme(self.theme)
         self.search_bar.apply_theme(self.theme)
+        if hasattr(self, "terminal_dock"):
+            self.terminal_dock.apply_theme(self.theme)
         for act in self._theme_actions:
             act.setChecked(act.text() == name)
         self._refresh_status()
+
+    def show_asciinema_player(self):
+        dlg = AsciinemaPlayerDialog(theme=self.theme, parent=self)
+        dlg.exec()
 
     # ============================================================ status
     def _refresh_status(self, *_):
@@ -796,5 +822,7 @@ SHORTCUTS_TEXT = """\
   Ketik/Backspace/Enter berlaku di semua kursor sekaligus
 
 <b>Lainnya</b>
+  Ctrl+`      Buka / tutup terminal
+  Ctrl+Shift+R Rekam terminal ke format Asciinema (.cast)
   Ctrl+wheel  zoom · Alt+Z bungkus kata · Esc tutup bar cari
 """

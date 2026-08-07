@@ -39,8 +39,16 @@ split panes, and theme switching.*
 | **Themes** | 7 themes: Dracula, One Dark, Monokai, Matrix Green, Nord, Solarized Dark, Light — persisted across sessions |
 | **File explorer** | Sidebar (`Ctrl+Shift+O`), double-click to open, right-click to open in a new pane |
 | **Sessions** | Split layout + open files + theme restored automatically (`~/.onyxpad/settings.json`) |
+| **Embedded Terminal** | Toggleable bottom terminal panel (`Ctrl+\``) with PowerShell / CMD / Bash shell & ANSI colors |
+| **Asciinema Recorder** | Record terminal sessions into standard asciinema `.cast` v2 format (`Ctrl+Shift+R`) & play back in built-in player |
 | **Extras** | Quick Open `Ctrl+P`, recent files, drag & drop files, status bar (Ln/Col/words/encoding/language/zoom/version), zoom `Ctrl+wheel` |
 | **Help & updates** | Help menu: shortcuts, About (with repo & author links), **Check for updates** — auto-notifies when a new release is published (via GitHub Releases API) |
+
+### Embedded Terminal & Asciinema Recorder
+
+OnyxPad includes an integrated terminal (`Ctrl+\``) with full ANSI color support (PowerShell, CMD, Bash) and a built-in **Asciinema Recorder (`Ctrl+Shift+R`)**. Recorded terminal sessions are saved in standard `.cast` v2 format and can be played back using the built-in **Asciinema Player**!
+
+Sample asciinema cast recording: [`docs/demo/onyxpad_terminal_demo.cast`](docs/demo/onyxpad_terminal_demo.cast)
 
 ### Split panes
 

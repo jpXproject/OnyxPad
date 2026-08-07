@@ -39,8 +39,16 @@ pencarian, split panes, dan ganti tema.*
 | **Tema** | 7 tema: Dracula, One Dark, Monokai, Matrix Green, Nord, Solarized Dark, Light — diingat lintas sesi |
 | **File explorer** | Sidebar (`Ctrl+Shift+O`), klik dua kali untuk buka, menu kanan: buka di pane baru |
 | **Sesi** | Layout split + file terbuka + tema dipulihkan otomatis (`~/.onyxpad/settings.json`) |
+| **Terminal Terintegrasi** | Panel terminal di bagian bawah (`Ctrl+\``) mendukung PowerShell / CMD / Bash dengan warna ANSI |
+| **Perekam Asciinema** | Rekam sesi terminal ke format standar asciinema `.cast` v2 (`Ctrl+Shift+R`) & putar ulang di player bawaan |
 | **Lainnya** | Buka Cepat `Ctrl+P`, recent files, drag & drop file, status bar (Ln/Col/kata/encoding/bahasa/zoom/versi), zoom `Ctrl+wheel` |
 | **Bantuan & pembaruan** | Menu Bantuan: pintasan, Tentang (tautan repo & author), **Cek Pembaruan** — notifikasi otomatis saat rilis baru terbit (via GitHub Releases API) |
+
+### Terminal Terintegrasi & Asciinema Recorder
+
+OnyxPad dilengkapi terminal terintegrasi (`Ctrl+\``) dengan dukungan warna ANSI penuh (PowerShell, CMD, Bash) serta **Asciinema Recorder (`Ctrl+Shift+R`)** bawaan. Sesi terminal yang direkam disimpan ke format standar `.cast` v2 dan dapat diputar kembali secara langsung di **Asciinema Player** bawaan!
+
+Contoh file rekaman asciinema: [`docs/demo/onyxpad_terminal_demo.cast`](docs/demo/onyxpad_terminal_demo.cast)
 
 ### Split panes
 
