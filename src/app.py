@@ -19,7 +19,7 @@ from .editor import CodeEditor, detect_language
 from .filetree import FileTree
 from .media import IMAGE_EXTS, VIDEO_EXTS, ImagePreviewWidget, VideoPreviewWidget
 from .panes import SplitManager
-from .recorder import AsciinemaPlayerDialog
+from .recorder import AsciinemaPlayerDialog, AsciinemaRecorder, RecordingScopeDialog
 from .search import SearchBar
 from .syntax import LANG_NAMES
 from .terminal import TerminalDock
@@ -217,7 +217,8 @@ class OnyxPad(QMainWindow):
         self.toolbar.addAction("⚡ Buka Cepat", self.quick_open).setToolTip("Buka Cepat (Ctrl+P)")
         self.toolbar.addSeparator()
         self.toolbar.addAction("💻 Terminal", lambda: self.terminal_dock.setVisible(not self.terminal_dock.isVisible())).setToolTip("Buka/Tutup Terminal (Ctrl+`)")
-        self.toolbar.addAction("⏺ Rekam Terminal", lambda: self.terminal_dock.terminal_panel.toggle_recording()).setToolTip("Rekam Asciinema (Ctrl+Shift+R)")
+        self.act_record = self.toolbar.addAction("⏺ Rekam Asciinema", self.toggle_workspace_recording)
+        self.act_record.setToolTip("Rekam Notepad / Terminal / Workspace (Ctrl+Shift+R)")
         self.toolbar.addAction("▶ Putar .cast", self.show_asciinema_player).setToolTip("Putar File Rekaman Asciinema")
 
         vbox = QVBoxLayout(central)
@@ -461,6 +462,12 @@ class OnyxPad(QMainWindow):
             widget = ImagePreviewWidget(path, theme=self.theme)
         elif ext in VIDEO_EXTS:
             widget = VideoPreviewWidget(path, theme=self.theme)
+        elif ext == ".cast":
+            from src.recorder import AsciinemaPlayerDialog
+            dlg = AsciinemaPlayerDialog(filepath=path, theme=self.theme, parent=self)
+            dlg.exec()
+            self._add_recent(path)
+            return None
         else:
             ed = self._make_editor()
             ok, err = ed.load(path)
@@ -774,6 +781,84 @@ class OnyxPad(QMainWindow):
     def show_asciinema_player(self):
         dlg = AsciinemaPlayerDialog(theme=self.theme, parent=self)
         dlg.exec()
+
+    def toggle_workspace_recording(self):
+        """Merekam aktivitas Notepad, Terminal, atau Full Workspace ke file .cast."""
+        import time
+        if hasattr(self, "_recording_scope") and self._recording_scope and hasattr(self, "_workspace_recorder") and self._workspace_recorder and self._workspace_recorder.is_recording:
+            # Stop recording
+            self._workspace_recorder.stop()
+            if hasattr(self, "_rec_timer"):
+                self._rec_timer.stop()
+
+            active_ed = self.manager.active_editor()
+            if active_ed and hasattr(active_ed, "disconnect_recorder"):
+                active_ed.disconnect_recorder()
+
+            self._recording_scope = None
+            self.act_record.setText("⏺ Rekam Asciinema")
+            self.act_record.setStyleSheet("")
+
+            default_dir = os.path.expanduser("~/.onyxpad/recordings")
+            os.makedirs(default_dir, exist_ok=True)
+            default_name = os.path.join(default_dir, f"session_{int(time.time())}.cast")
+
+            filepath, _ = QFileDialog.getSaveFileName(
+                self, "Simpan Rekaman Asciinema", default_name, "Asciinema Cast (*.cast);;JSON Lines (*.json)")
+            if filepath:
+                if self._workspace_recorder.save_to_file(filepath):
+                    self.statusBar().showMessage(f"Rekaman tersimpan: {os.path.basename(filepath)}", 4000)
+                    dlg = AsciinemaPlayerDialog(filepath=filepath, theme=self.theme, parent=self)
+                    dlg.exec()
+        else:
+            dlg = RecordingScopeDialog(theme=self.theme, parent=self)
+            if dlg.exec() != QDialog.DialogCode.Accepted:
+                return
+
+            scope = dlg.selected_scope
+            self._recording_scope = scope
+            if not hasattr(self, "_workspace_recorder") or not self._workspace_recorder:
+                self._workspace_recorder = AsciinemaRecorder()
+
+            scope_names = {
+                "notepad": "Notepad Aktif",
+                "terminal": "Terminal",
+                "workspace": "Full Workspace"
+            }
+            title = f"OnyxPad Recording [{scope_names.get(scope, 'Workspace')}]"
+            self._workspace_recorder.start(width=80, height=24, title=title)
+
+            # Connect target based on selected scope
+            if scope in ("notepad", "workspace"):
+                active_ed = self.manager.active_editor()
+                if active_ed and hasattr(active_ed, "connect_recorder"):
+                    active_ed.connect_recorder(self._workspace_recorder)
+
+            if scope in ("terminal", "workspace"):
+                self.terminal_dock.terminal_panel.recorder = self._workspace_recorder
+                if not self.terminal_dock.isVisible():
+                    self.terminal_dock.show()
+
+            self._rec_start_time = time.time()
+            if not hasattr(self, "_rec_timer"):
+                self._rec_timer = QTimer(self)
+                self._rec_timer.timeout.connect(self._update_workspace_rec_timer)
+            self._rec_timer.start(1000)
+            self._update_workspace_rec_timer()
+
+            self.act_record.setText("⏹ Hentikan Rekam")
+            self.act_record.setStyleSheet("background-color: #f38ba8; color: #11111b; font-weight: bold;")
+            self.statusBar().showMessage(f"🔴 Perekaman Dimulai [{scope_names.get(scope, 'Workspace')}] — Tekan ⏹ Hentikan Rekam untuk Menyimpan", 5000)
+
+    def _update_workspace_rec_timer(self):
+        import time
+        if not hasattr(self, "_rec_start_time") or not self._rec_start_time:
+            return
+        elapsed = int(time.time() - self._rec_start_time)
+        m = elapsed // 60
+        s = elapsed % 60
+        scope_str = getattr(self, "_recording_scope", "workspace")
+        self.statusBar().showMessage(f"🔴 REC {m:02d}:{s:02d} [{scope_str.upper()}] — Tekan ⏹ Hentikan Rekam untuk Menyimpan")
 
     # ============================================================ status
     def _refresh_status(self, *_):

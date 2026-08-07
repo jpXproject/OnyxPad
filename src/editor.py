@@ -49,6 +49,7 @@ class CodeEditor(QPlainTextEdit):
         self._search_color = QColor(theme["selection"])
         self._zoom = 0
         self._extra_cursors = []  # rentang [start, end] kursor sekunder (Ctrl+D)
+        self._recorder = None
 
         f = self.font()
         if font_family:
@@ -60,9 +61,6 @@ class CodeEditor(QPlainTextEdit):
         self.setLineWrapMode(
             QPlainTextEdit.LineWrapMode.WidgetWidth if wrap
             else QPlainTextEdit.LineWrapMode.NoWrap)
-        self.setCenterOnScroll(True)
-        self.document().setDocumentMargin(8)
-
         self._line_area = LineNumberArea(self)
         self.blockCountChanged.connect(self._update_line_area_width)
         self.updateRequest.connect(self._update_line_area)
@@ -75,6 +73,39 @@ class CodeEditor(QPlainTextEdit):
         self._refresh_extra()
         # setDocumentMargin()/setStyleSheet() menandai dokumen sebagai modified
         # — editor baru harus tampil bersih (tanpa titik "belum disimpan").
+        self.document().setModified(False)
+
+    def connect_recorder(self, recorder):
+        self.disconnect_recorder()
+        self._recorder = recorder
+        self.document().contentsChange.connect(self._on_contents_change)
+        if self._recorder and self._recorder.is_recording:
+            init_text = self.toPlainText()
+            if init_text:
+                file_label = self._file_path or "Tanpa Judul"
+                header_str = f"--- [Notepad: {os.path.basename(str(file_label))}] ---\n{init_text}\n"
+                self._recorder.record_output(header_str)
+
+    def disconnect_recorder(self):
+        if hasattr(self, '_recorder') and self._recorder:
+            try:
+                self.document().contentsChange.disconnect(self._on_contents_change)
+            except Exception:
+                pass
+            self._recorder = None
+
+    def _on_contents_change(self, position, charsRemoved, charsAdded):
+        if not hasattr(self, '_recorder') or not self._recorder or not self._recorder.is_recording:
+            return
+        try:
+            doc_text = self.toPlainText()
+            if charsAdded > 0 and position >= 0 and position + charsAdded <= len(doc_text):
+                added_text = doc_text[position : position + charsAdded]
+                self._recorder.record_output(added_text)
+            elif charsRemoved > 0:
+                self._recorder.record_output("\b" * charsRemoved)
+        except Exception:
+            pass
         self.document().setModified(False)
 
     # ------------------------------------------------------------------ fonts

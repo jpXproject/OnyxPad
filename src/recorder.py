@@ -13,63 +13,57 @@ from pathlib import Path
 from PySide6.QtCore import Qt, QTimer, QThread, QMutex, QMutexLocker
 from PySide6.QtGui import QFont, QIcon, QKeySequence, QTextCursor
 from PySide6.QtWidgets import (QDialog, QFileDialog, QHBoxLayout, QLabel,
-                                QMessageBox, QPushButton, QSlider,
+                                QMessageBox, QPushButton, QRadioButton, QSlider,
                                 QSpinBox, QStyle, QPlainTextEdit, QVBoxLayout, QWidget)
 
 
-class PTYBufferWorker(QThread):
-    """QThread worker untuk memproses PTY buffer tracking dan frame asciinema secara terpisah dari GUI main loop."""
+class RecordingScopeDialog(QDialog):
+    """Dialog modern untuk memilih skop perekaman Asciinema (Notepad, Terminal, atau Full Workspace)."""
 
-    def __init__(self, recorder, parent=None):
+    def __init__(self, theme=None, parent=None):
         super().__init__(parent)
-        self.recorder = recorder
-        self._queue = queue.Queue()
-        self.start_time = None
-        self._mutex = QMutex()
+        self.setWindowTitle("Pilih Area Perekaman Asciinema (.cast)")
+        self.setFixedWidth(440)
+        self.theme = theme or {}
+        self.selected_scope = "notepad"
 
-    def start_recording(self, start_time: float):
-        with QMutexLocker(self._mutex):
-            self.start_time = start_time
-            while not self._queue.empty():
-                try:
-                    self._queue.get_nowait()
-                except queue.Empty:
-                    break
-        if not self.isRunning():
-            self.start()
+        layout = QVBoxLayout(self)
+        layout.setSpacing(12)
 
-    def enqueue(self, event_type: str, text: str):
-        if not text:
-            return
-        timestamp = time.time()
-        self._queue.put((timestamp, event_type, text))
+        lbl = QLabel("<b>Pilih area aktivitas yang ingin Anda rekam:</b>", self)
+        layout.addWidget(lbl)
 
-    def run(self):
-        while True:
-            try:
-                item = self._queue.get(timeout=0.05)
-            except queue.Empty:
-                with QMutexLocker(self._mutex):
-                    if self.start_time is None and self._queue.empty():
-                        break
-                continue
+        self.rb_notepad = QRadioButton("📝  <b>Notepad / Editor Teks Aktif</b><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small style='color:#a6adc8;'>Merekam pengetikan & koding pada dokumen editor aktif</small>", self)
+        self.rb_terminal = QRadioButton("💻  <b>Terminal Interaktif</b><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small style='color:#a6adc8;'>Merekam sesi perintah & output di terminal</small>", self)
+        self.rb_workspace = QRadioButton("⚡  <b>Seluruh Area Kerja (Full Workspace)</b><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<small style='color:#a6adc8;'>Merekam pengetikan Notepad + perintah Terminal sekaligus!</small>", self)
 
-            if item is None:
-                break
+        self.rb_notepad.setChecked(True)
 
-            timestamp, event_type, text = item
-            with QMutexLocker(self._mutex):
-                st = self.start_time
+        layout.addWidget(self.rb_notepad)
+        layout.addWidget(self.rb_terminal)
+        layout.addWidget(self.rb_workspace)
 
-            if st is not None:
-                elapsed = round(timestamp - st, 6)
-                self.recorder._append_frame_from_thread(elapsed, event_type, text)
+        btn_box = QHBoxLayout()
+        btn_ok = QPushButton("⏺ Mulai Merekam", self)
+        btn_ok.setStyleSheet("background-color: #f38ba8; color: #11111b; font-weight: bold; padding: 6px 16px;")
+        btn_ok.clicked.connect(self.accept)
 
-    def stop_recording(self):
-        self._queue.put(None)
-        self.wait(1000)
-        with QMutexLocker(self._mutex):
-            self.start_time = None
+        btn_cancel = QPushButton("Batal", self)
+        btn_cancel.clicked.connect(self.reject)
+
+        btn_box.addStretch()
+        btn_box.addWidget(btn_cancel)
+        btn_box.addWidget(btn_ok)
+        layout.addLayout(btn_box)
+
+    def accept(self):
+        if self.rb_notepad.isChecked():
+            self.selected_scope = "notepad"
+        elif self.rb_terminal.isChecked():
+            self.selected_scope = "terminal"
+        else:
+            self.selected_scope = "workspace"
+        super().accept()
 
 
 class AsciinemaRecorder:
@@ -84,7 +78,6 @@ class AsciinemaRecorder:
         self.header = {}
         self._frames = []
         self._mutex = QMutex()
-        self.worker = PTYBufferWorker(self)
 
     @property
     def frames(self):
@@ -121,26 +114,29 @@ class AsciinemaRecorder:
             }
         }
         with QMutexLocker(self._mutex):
-            self._frames = []
+            # Rekam frame awal (0.0s) agar file .cast selalu memuat snapshot awal
+            self._frames = [[0.0, "o", ""]]
         self.is_recording = True
-        self.worker.start_recording(self.start_time)
 
     def record_output(self, text: str):
-        """Merekam event output ('o') dengan timestamp relatif (detik)."""
-        if not self.is_recording or self.start_time is None:
+        """Merekam event output ('o') secara presisi dengan timestamp relatif (detik)."""
+        if not self.is_recording or self.start_time is None or not text:
             return
-        self.worker.enqueue("o", text)
+        elapsed = round(time.time() - self.start_time, 6)
+        with QMutexLocker(self._mutex):
+            self._frames.append([elapsed, "o", text])
 
     def record_input(self, text: str):
-        """Merekam event input ('i') dengan timestamp relatif (detik)."""
-        if not self.is_recording or self.start_time is None:
+        """Merekam event input ('i') secara presisi dengan timestamp relatif (detik)."""
+        if not self.is_recording or self.start_time is None or not text:
             return
-        self.worker.enqueue("i", text)
+        elapsed = round(time.time() - self.start_time, 6)
+        with QMutexLocker(self._mutex):
+            self._frames.append([elapsed, "i", text])
 
     def stop(self):
         """Menghentikan perekaman dan mengembalikan data asciinema."""
         self.is_recording = False
-        self.worker.stop_recording()
         with QMutexLocker(self._mutex):
             frames_copy = list(self._frames)
         return {
@@ -168,25 +164,22 @@ class AsciinemaRecorder:
         path = Path(filepath)
         if not path.exists():
             return None, None
-        with open(path, "r", encoding="utf-8") as f:
-            lines = f.readlines()
-            if not lines:
-                return None, None
-            try:
+        try:
+            with open(path, "r", encoding="utf-8-sig", errors="replace") as f:
+                lines = [l.strip() for l in f.readlines() if l.strip()]
+                if not lines:
+                    return None, None
                 header = json.loads(lines[0])
-            except Exception:
-                return None, None
-            for line in lines[1:]:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    frame = json.loads(line)
-                    if isinstance(frame, list) and len(frame) >= 3:
-                        frames.append(frame)
-                except Exception:
-                    continue
-        return header, frames
+                for line in lines[1:]:
+                    try:
+                        frame = json.loads(line)
+                        if isinstance(frame, list) and len(frame) >= 3:
+                            frames.append(frame)
+                    except Exception:
+                        continue
+            return header, frames
+        except Exception:
+            return None, None
 
 
 class AsciinemaPlayerDialog(QDialog):
@@ -203,7 +196,7 @@ class AsciinemaPlayerDialog(QDialog):
 
         if filepath and not self.frames:
             h, f = AsciinemaRecorder.load_from_file(filepath)
-            if h and f:
+            if h is not None and f is not None:
                 self.header = h
                 self.frames = f
 
@@ -218,6 +211,10 @@ class AsciinemaPlayerDialog(QDialog):
         self._apply_theme()
         if self.frames:
             self._init_player()
+            # Auto-start playback on launch for instant enjoyment
+            QTimer.singleShot(200, self.start_playback)
+        else:
+            self.display.setPlainText("[Rekaman ini tidak memuat aktivitas terminal / 0 frame]")
 
     def _build_ui(self):
         layout = QVBoxLayout(self)
@@ -393,13 +390,17 @@ class AsciinemaPlayerDialog(QDialog):
             self, "Buka File Rekaman Asciinema (.cast)", "", "Asciinema Cast (*.cast *.json);;Semua File (*.*)")
         if filepath:
             h, f = AsciinemaRecorder.load_from_file(filepath)
-            if h and f:
+            if h is not None and f is not None:
                 self.header = h
                 self.frames = f
                 title_text = self.header.get("title", "Asciinema Recording")
                 w = self.header.get("width", 80)
                 h_val = self.header.get("height", 24)
                 self.lbl_title.setText(f"🎬 <b>{title_text}</b> ({w}x{h_val})")
-                self._init_player()
+                if self.frames:
+                    self._init_player()
+                    self.start_playback()
+                else:
+                    self.display.setPlainText("[Rekaman ini tidak memuat aktivitas terminal / 0 frame]")
             else:
                 QMessageBox.warning(self, "Format Salah", "Gagal membaca format file asciinema .cast")

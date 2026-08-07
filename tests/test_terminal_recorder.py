@@ -22,11 +22,11 @@ def test_asciinema_recorder_start_and_stop():
 
     res = recorder.stop()
     assert recorder.is_recording is False
-    assert len(res["frames"]) == 2
-    assert res["frames"][0][1] == "i"
-    assert res["frames"][0][2] == "ls\n"
-    assert res["frames"][1][1] == "o"
-    assert res["frames"][1][2] == "file1.py\nfile2.py\n"
+    assert len(res["frames"]) == 3
+    assert res["frames"][1][1] == "i"
+    assert res["frames"][1][2] == "ls\n"
+    assert res["frames"][2][1] == "o"
+    assert res["frames"][2][2] == "file1.py\nfile2.py\n"
 
 
 def test_asciinema_recorder_save_and_load(tmp_path):
@@ -42,8 +42,8 @@ def test_asciinema_recorder_save_and_load(tmp_path):
 
     header, frames = AsciinemaRecorder.load_from_file(str(file_path))
     assert header["title"] == "Test Save"
-    assert len(frames) == 1
-    assert frames[0][2] == "Hello World\n"
+    assert len(frames) == 2
+    assert frames[1][2] == "Hello World\n"
 
 
 def test_ansi_parser(qapp):
@@ -91,6 +91,19 @@ def test_player_dialog_creation(qapp, tmp_path):
 
     dlg = AsciinemaPlayerDialog(filepath=str(filepath))
     assert dlg.header["title"] == "Player Test"
-    assert len(dlg.frames) == 1
-    dlg._render_frame(0)
+    assert len(dlg.frames) == 2
+    dlg._render_frame(1)
     assert "Testing Player" in dlg.display.toPlainText()
+
+
+def test_terminal_recording_toggle_and_timer(qapp, tmp_path):
+    panel = TerminalPanel(cwd=str(tmp_path))
+    assert panel.lbl_rec_status.isHidden() is True
+    panel.toggle_recording()
+    assert panel.recorder.is_recording is True
+    assert panel.lbl_rec_status.isHidden() is False
+    panel._update_rec_timer_label()
+    assert "🔴 REC" in panel.lbl_rec_status.text()
+    panel.recorder.stop()
+    panel._rec_timer.stop()
+    panel.kill_process()

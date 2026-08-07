@@ -11,6 +11,7 @@ Mendukung:
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
 from PySide6.QtCore import QProcess, Qt, Signal, QTimer
@@ -188,8 +189,11 @@ class TerminalPanel(QWidget):
         tb.addStretch()
 
         # Rec Controls (Asciinema)
-        self.lbl_rec_status = QLabel("🔴 REC", self)
-        self.lbl_rec_status.setStyleSheet("color: #ff5555; font-weight: bold;")
+        self._rec_timer = QTimer(self)
+        self._rec_timer.timeout.connect(self._update_rec_timer_label)
+
+        self.lbl_rec_status = QLabel("🔴 REC 00:00", self)
+        self.lbl_rec_status.setStyleSheet("color: #ff5555; font-weight: bold; font-family: monospace;")
         self.lbl_rec_status.setVisible(False)
         tb.addWidget(self.lbl_rec_status)
 
@@ -351,32 +355,49 @@ class TerminalPanel(QWidget):
         cursor.insertText(text)
 
     # Asciinema Recording Integrasi
+    def _update_rec_timer_label(self):
+        if not hasattr(self, "_rec_start_time") or self._rec_start_time is None:
+            return
+        elapsed = int(time.time() - self._rec_start_time)
+        m = elapsed // 60
+        s = elapsed % 60
+        self.lbl_rec_status.setText(f"🔴 REC {m:02d}:{s:02d}")
+
     def toggle_recording(self):
+        win = self.window()
         if self.recorder.is_recording:
-            # Stop & Save
+            # Stop & Save silently without annoying popups
             self.recorder.stop()
+            self._rec_timer.stop()
             self.lbl_rec_status.setVisible(False)
             self.btn_record.setText("⏺ Rekam Asciinema")
             self.btn_record.setStyleSheet("")
 
+            default_dir = os.path.expanduser("~/.onyxpad/recordings")
+            os.makedirs(default_dir, exist_ok=True)
+            default_name = os.path.join(default_dir, f"session_{int(time.time())}.cast")
+
             filepath, _ = QFileDialog.getSaveFileName(
-                self, "Simpan Rekaman Asciinema", "", "Asciinema Cast (*.cast);;JSON Lines (*.json)")
+                self, "Simpan Rekaman Asciinema", default_name, "Asciinema Cast (*.cast);;JSON Lines (*.json)")
             if filepath:
                 if self.recorder.save_to_file(filepath):
-                    QMessageBox.information(
-                        self, "Rekaman Disimpan",
-                        f"File rekaman asciinema berhasil disimpan:\n{filepath}\n\nAnda dapat memutarnya dengan tombol 'Putar .cast' atau asciinema CLI!")
+                    if hasattr(win, "statusBar") and win.statusBar():
+                        win.statusBar().showMessage(f"File tersimpan: {os.path.basename(filepath)}", 4000)
                     # Buka dialog player secara otomatis
                     dlg = AsciinemaPlayerDialog(filepath=filepath, theme=self.theme, parent=self)
                     dlg.exec()
         else:
-            # Start Recording
+            # Start Recording SILENTLY (No intrusive popup message box!)
             title = f"OnyxPad Terminal Session ({self.cb_shell.currentText()})"
             self.recorder.start(width=80, height=24, title=title)
+            self._rec_start_time = time.time()
+            self._rec_timer.start(1000)
+            self._update_rec_timer_label()
             self.lbl_rec_status.setVisible(True)
             self.btn_record.setText("⏹ Hentikan Rekam")
             self.btn_record.setStyleSheet("background-color: #f38ba8; color: #11111b; font-weight: bold;")
-            QMessageBox.information(self, "Perekaman Dimulai", "Perekaman terminal asciinema dimulai!\nSemua output & input terminal akan dicatat dalam format .cast asciinema v2.")
+            if hasattr(win, "statusBar") and win.statusBar():
+                win.statusBar().showMessage("🔴 Perekaman Terminal Dimulai (Tekan ⏹ Hentikan Rekam untuk Menyimpan)", 4000)
 
     def open_player_dialog(self):
         dlg = AsciinemaPlayerDialog(theme=self.theme, parent=self)
