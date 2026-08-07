@@ -9,20 +9,13 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![GUI](https://img.shields.io/badge/GUI-PySide6%20(Qt6)-41CD52?logo=qt&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-148%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-162%20passed-brightgreen)
+![Release](https://img.shields.io/badge/Release-v1.0.2-blue?logo=github)
 
 Notepad hitam bertema gelap yang di-upgrade penuh, dibangun dengan **PySide6
 (Qt6)**. Split panes bertingkat gaya tmux / VS Code, tab per pane, syntax
-highlighting multi-bahasa, find &amp; replace, **edit multi-kursor**, 7 tema,
-sesi otomatis, dan penjelajah folder. Aplikasi terbuka dengan tema khas
-**Dracula** — ini rekaman langsungnya:
-
-<p align="center">
-  <img src="docs/demo/demo.gif" alt="OnyxPad — demo fitur" width="100%">
-</p>
-
-*Tur fitur: mengetik dengan auto-pair, multi-kursor (`Ctrl+D`), highlight
-pencarian, split panes, dan ganti tema.*
+highlighting multi-bahasa, find &amp; replace, **edit multi-kursor**, 7 tema kontras tinggi,
+preview media (gambar & video), Quick Action Toolbar, perekam terminal Asciinema, dan penjelajah folder.
 
 ---
 
@@ -31,18 +24,17 @@ pencarian, split panes, dan ganti tema.*
 | Area | Fitur |
 |---|---|
 | **Split panes** | `Ctrl+\` split kanan, `Ctrl+'` split bawah — bisa bertingkat, gaya tmux/VS Code |
-| **Tab per pane** | Setiap pane punya tab sendiri (drag untuk pindah posisi) |
-| **Syntax highlighting** | Python, JS/TS, HTML, CSS, C/C++, Java, JSON, Markdown, Shell, YAML — auto-deteksi dari ekstensi |
+| **Tab per pane** | Setiap pane punya tab sendiri (drag untuk pindah posisi, opsi tutup tab context menu) |
+| **Quick Action Toolbar** | Tombol aksi cepat untuk Tab Baru, Buka File, Buka Folder, Simpan, Split, Cari, Terminal & Asciinema Recorder |
+| **Preview Media** | Klik dua kali file gambar (`.png`, `.jpg`, `.gif`, `.svg`, `.webp`) atau video (`.mp4`, `.webm`, `.avi`, `.mkv`) di File Explorer untuk memutar/melihat langsung di tab editor |
+| **Syntax highlighting** | Python, JS/TS, HTML, CSS, C/C++, Java, JSON, Markdown, Shell, YAML, SQL — auto-deteksi dari ekstensi |
 | **Find & replace** | `Ctrl+F` / `Ctrl+H`, opsi Aa / kata utuh / regex, hitung jumlah cocok, Ganti Semua |
 | **Multi-kursor** | `Ctrl+D` pilih kata / kemunculan berikutnya, `Ctrl+U` buang kursor terakhir, `Esc` selesai — ketik/backspace/Enter berlaku di semua kursor sekaligus |
-| **Editor pro** | Nomor baris, highlight baris aktif, pencocokan kurung, auto-pair `(){}[]""` (termasuk overtype kutip), tab stop (Tab lompat keluar pasangan), auto-indent, komentari `Ctrl+/` |
-| **Tema** | 7 tema: Dracula, One Dark, Monokai, Matrix Green, Nord, Solarized Dark, Light — diingat lintas sesi |
-| **File explorer** | Sidebar (`Ctrl+Shift+O`), klik dua kali untuk buka, menu kanan: buka di pane baru |
-| **Sesi** | Layout split + file terbuka + tema dipulihkan otomatis (`~/.onyxpad/settings.json`) |
+| **Editor pro** | Nomor baris, highlight baris aktif, pencocokan kurung, auto-pair `(){}[]""`, tab stop, auto-indent, komentari `Ctrl+/` |
+| **Tema Kontras Tinggi** | 7 tema: Dracula, One Dark, Monokai, Matrix Green, Nord, Solarized Dark, Light — warna teks diperbaiki agar selalu terbaca |
 | **Terminal Terintegrasi** | Panel terminal di bagian bawah (`Ctrl+\``) mendukung PowerShell / CMD / Bash dengan warna ANSI |
-| **Perekam Asciinema** | Rekam sesi terminal ke format standar asciinema `.cast` v2 (`Ctrl+Shift+R`) & putar ulang di player bawaan |
-| **Lainnya** | Buka Cepat `Ctrl+P`, recent files, drag & drop file, status bar (Ln/Col/kata/encoding/bahasa/zoom/versi), zoom `Ctrl+wheel` |
-| **Bantuan & pembaruan** | Menu Bantuan: pintasan, Tentang (tautan repo & author), **Cek Pembaruan** — notifikasi otomatis saat rilis baru terbit (via GitHub Releases API) |
+| **Perekam Asciinema** | Rekam sesi terminal ke format standar asciinema `.cast` v2 (`Ctrl+Shift+R`) secara *multithreaded* (`QThread`) & putar ulang di player bawaan |
+| **Bantuan & pembaruan** | Dialog pembaruan berdesain Dark UI dengan integrasi GitHub Releases API |
 
 ### Terminal Terintegrasi & Asciinema Recorder
 

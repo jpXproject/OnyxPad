@@ -9,20 +9,13 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![GUI](https://img.shields.io/badge/GUI-PySide6%20(Qt6)-41CD52?logo=qt&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-148%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-162%20passed-brightgreen)
+![Release](https://img.shields.io/badge/Release-v1.0.2-blue?logo=github)
 
 A dark, feature-packed notepad built with **PySide6 (Qt6)**. Split panes in a
 tmux / VS Code style, per-pane tabs, multi-language syntax highlighting,
-find & replace, **multi-cursor editing**, 7 themes, auto session restore,
-and a built-in file explorer. The app opens in the signature **Dracula
-theme** — here's a live recording:
-
-<p align="center">
-  <img src="docs/demo/demo.gif" alt="OnyxPad — live feature demo" width="100%">
-</p>
-
-*Feature tour: auto-pair typing, multi-cursor (`Ctrl+D`), search highlight,
-split panes, and theme switching.*
+find & replace, **multi-cursor editing**, 7 high-contrast themes, auto session restore,
+media previews (images & videos), Quick Action Toolbar, and a built-in file explorer.
 
 ---
 
@@ -31,18 +24,18 @@ split panes, and theme switching.*
 | Area | What you get |
 |---|---|
 | **Split panes** | `Ctrl+\` split right, `Ctrl+'` split below — nestable, tmux/VS Code style |
-| **Tabs per pane** | Each pane has its own tab bar (drag tabs to reorder) |
-| **Syntax highlighting** | Python, JS/TS, HTML, CSS, C/C++, Java, JSON, Markdown, Shell, YAML — auto-detected from the extension |
+| **Tabs per pane** | Each pane has its own tab bar (drag tabs to reorder, context menu close options) |
+| **Quick Toolbar** | Action toolbar for Tab Baru, Open File, Open Folder, Save, Split, Find, Terminal & Asciinema Recorder |
+| **Media Previews** | Double-click images (`.png`, `.jpg`, `.gif`, `.svg`, `.webp`) or videos (`.mp4`, `.webm`, `.avi`, `.mkv`) in File Explorer to preview directly in editor tabs |
+| **Syntax highlighting** | Python, JS/TS, HTML, CSS, C/C++, Java, JSON, Markdown, Shell, YAML, SQL — auto-detected from extension |
 | **Find & replace** | `Ctrl+F` / `Ctrl+H`, case / whole-word / regex options, match count, Replace All |
 | **Multi-cursor** | `Ctrl+D` select word / next occurrence, `Ctrl+U` drop the last cursor, `Esc` to finish — typing, backspace and Enter apply to every cursor at once |
-| **Pro editing** | Line numbers, active-line highlight, bracket matching, auto-pair `(){}[]""` (incl. quote overtype), tab-stop jump out of pairs, auto-indent, comment toggle `Ctrl+/` |
-| **Themes** | 7 themes: Dracula, One Dark, Monokai, Matrix Green, Nord, Solarized Dark, Light — persisted across sessions |
-| **File explorer** | Sidebar (`Ctrl+Shift+O`), double-click to open, right-click to open in a new pane |
-| **Sessions** | Split layout + open files + theme restored automatically (`~/.onyxpad/settings.json`) |
+| **Pro editing** | Line numbers, active-line highlight, bracket matching, auto-pair `(){}[]""`, tab-stop jump out of pairs, auto-indent, comment toggle `Ctrl+/` |
+| **High-Contrast Themes** | 7 themes: Dracula, One Dark, Monokai, Matrix Green, Nord, Solarized Dark, Light — persisted across sessions with polished readable text colors |
+| **File explorer** | Sidebar (`Ctrl+Shift+O`), double-click to open text/media files, right-click to open in a new pane |
 | **Embedded Terminal** | Toggleable bottom terminal panel (`Ctrl+\``) with PowerShell / CMD / Bash shell & ANSI colors |
-| **Asciinema Recorder** | Record terminal sessions into standard asciinema `.cast` v2 format (`Ctrl+Shift+R`) & play back in built-in player |
-| **Extras** | Quick Open `Ctrl+P`, recent files, drag & drop files, status bar (Ln/Col/words/encoding/language/zoom/version), zoom `Ctrl+wheel` |
-| **Help & updates** | Help menu: shortcuts, About (with repo & author links), **Check for updates** — auto-notifies when a new release is published (via GitHub Releases API) |
+| **Asciinema Recorder** | Record terminal sessions into standard asciinema `.cast` v2 format (`Ctrl+Shift+R`) in a separate `QThread` & play back in built-in player |
+| **Help & updates** | Styled dark update dialog with GitHub Releases API check, release notes, and version update prompts |
 
 ### Embedded Terminal & Asciinema Recorder
 

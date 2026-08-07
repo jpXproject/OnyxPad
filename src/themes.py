@@ -89,12 +89,12 @@ THEMES = {
         "#000000", "#00ff00", "#020d02", "#00aa00", "#051505", "#00ff00",
         "#003a00",
         {"window": "#000000", "panel": "#020d02", "panel_alt": "#010701",
-         "accent": "#00ff00", "muted": "#008800", "border": "#003a00",
+         "accent": "#00ff00", "muted": "#00cc00", "border": "#004a00",
          "tab_active": "#052505", "tab_inactive": "#010701",
          "hover": "#052505", "input": "#000000", "menu": "#000000",
          "menu_sel": "#052505"},
         {"keyword": "#00ff00", "builtin": "#00dd00", "string": "#00cc00",
-         "comment": "#005500", "number": "#00ff88", "function": "#00ff00",
+         "comment": "#007700", "number": "#00ff88", "function": "#00ff00",
          "klass": "#00ffcc", "decorator": "#00ff88", "operator": "#00ff00",
          "preprocessor": "#00ff88", "tag": "#00ff00", "attribute": "#00dd00",
          "heading": "#00ff00", "bold": "#00ff00", "italic": "#00dd00",
@@ -107,7 +107,7 @@ THEMES = {
         "#2e3440", "#d8dee9", "#2b303b", "#616e88", "#3b4252", "#eceff4",
         "#434c5e",
         {"window": "#242933", "panel": "#2e3440", "panel_alt": "#2b303b",
-         "accent": "#88c0d0", "muted": "#7b88a1", "border": "#3b4252",
+         "accent": "#88c0d0", "muted": "#d8dee9", "border": "#3b4252",
          "tab_active": "#434c5e", "tab_inactive": "#242933",
          "hover": "#3b4252", "input": "#1f242e", "menu": "#242933",
          "menu_sel": "#434c5e"},
@@ -125,7 +125,7 @@ THEMES = {
         "#002b36", "#839496", "#00222c", "#586e75", "#073642", "#93a1a1",
         "#073642",
         {"window": "#001b22", "panel": "#002b36", "panel_alt": "#00222c",
-         "accent": "#268bd2", "muted": "#586e75", "border": "#073642",
+         "accent": "#268bd2", "muted": "#839496", "border": "#073642",
          "tab_active": "#073642", "tab_inactive": "#001b22",
          "hover": "#073642", "input": "#00141a", "menu": "#001b22",
          "menu_sel": "#073642"},
@@ -143,7 +143,7 @@ THEMES = {
         "#ffffff", "#1f2430", "#f0f0f0", "#8a8f98", "#f2f4f8", "#1f2430",
         "#cfe3ff",
         {"window": "#f0f2f5", "panel": "#ffffff", "panel_alt": "#f0f0f0",
-         "accent": "#2563eb", "muted": "#6b7280", "border": "#d7dbe0",
+         "accent": "#2563eb", "muted": "#4b5563", "border": "#d7dbe0",
          "tab_active": "#ffffff", "tab_inactive": "#e5e7eb",
          "hover": "#eef1f5", "input": "#ffffff", "menu": "#ffffff",
          "menu_sel": "#e5e7eb"},
@@ -167,17 +167,21 @@ THEME_ORDER = [
 def build_qss(ui):
     """Bangun stylesheet global dari token UI tema."""
     tpl = """
-QMainWindow, QDialog { background: @window; }
+QMainWindow, QDialog { background: @window; color: @text; }
 QMenuBar { background: @window; color: @text; border-bottom: 1px solid @border; }
-QMenuBar::item { background: transparent; padding: 4px 10px; border-radius: 3px; }
-QMenuBar::item:selected { background: @hover; }
-QMenuBar::item:pressed { background: @menu_sel; }
+QMenuBar::item { background: transparent; color: @text; padding: 4px 10px; border-radius: 3px; }
+QMenuBar::item:selected { background: @hover; color: @text; }
+QMenuBar::item:pressed { background: @menu_sel; color: @text; }
 QMenu { background: @menu; color: @text; border: 1px solid @border; }
-QMenu::item { padding: 5px 24px 5px 14px; }
+QMenu::item { padding: 5px 24px 5px 14px; color: @text; }
 QMenu::item:selected { background: @menu_sel; color: @text; }
 QMenu::separator { height: 1px; background: @border; margin: 4px 10px; }
-QStatusBar { background: @window; border-top: 1px solid @border; }
-QStatusBar QLabel { color: @muted; padding: 0 6px; font-size: 11px; }
+QToolBar { background: @window; border-bottom: 1px solid @border; spacing: 4px; padding: 2px; }
+QToolButton { background: @panel_alt; color: @text; border: 1px solid @border; border-radius: 4px; padding: 4px 8px; font-size: 11px; }
+QToolButton:hover { background: @hover; border-color: @accent; color: @text; }
+QToolButton:pressed { background: @menu_sel; color: @text; }
+QStatusBar { background: @window; color: @text; border-top: 1px solid @border; }
+QStatusBar QLabel { color: @text; padding: 0 6px; font-size: 11px; }
 QStatusBar QLabel#sbHighlight { color: @accent; font-weight: bold; }
 QTabWidget::pane { border: none; background: @panel; }
 QTabBar { background: @panel_alt; }
@@ -190,22 +194,24 @@ QTabBar::close-button { image: none; }
 QSplitter::handle { background: @border; }
 QSplitter::handle:hover { background: @accent; }
 QDockWidget { color: @text; titlebar-close-icon: none; }
-QDockWidget::title { background: @panel_alt; padding: 5px 8px;
+QDockWidget::title { background: @panel_alt; color: @text; padding: 5px 8px;
   border-bottom: 1px solid @border; font-weight: bold; }
 QTreeView { background: @panel; color: @text; border: none; outline: none; }
-QTreeView::item { padding: 2px; }
+QTreeView::item { padding: 2px; color: @text; }
 QTreeView::item:selected { background: @accent; color: @window; }
-QTreeView::item:hover { background: @hover; }
+QTreeView::item:hover { background: @hover; color: @text; }
 QLineEdit, QPlainTextEdit, QTextEdit { background: @input; color: @text;
-  border: 1px solid @border; border-radius: 4px; selection-background-color: @menu_sel; }
+  border: 1px solid @border; border-radius: 4px; selection-background-color: @menu_sel; selection-color: @text; }
 QLineEdit { padding: 3px 6px; }
 QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus { border: 1px solid @accent; }
 QPushButton { background: @panel_alt; color: @text; border: 1px solid @border;
   border-radius: 4px; padding: 4px 12px; }
-QPushButton:hover { background: @hover; border-color: @accent; }
-QPushButton:pressed { background: @menu_sel; }
+QPushButton:hover { background: @hover; border-color: @accent; color: @text; }
+QPushButton:pressed { background: @menu_sel; color: @text; }
 QPushButton:focus { border: 1px solid @accent; }
 QMessageBox QPushButton { min-width: 90px; padding: 6px 16px; }
+QMessageBox QLabel { color: @text; }
+QDialog QLabel { color: @text; }
 QCheckBox { color: @text; }
 QToolTip { background: @panel_alt; color: @text; border: 1px solid @border;
   padding: 4px 8px; }
@@ -217,6 +223,7 @@ QScrollBar:horizontal { background: transparent; height: 10px; margin: 0; }
 QScrollBar::handle:horizontal { background: @border; border-radius: 4px; min-width: 24px; }
 QScrollBar::add-line, QScrollBar::sub-line { width: 0; }
 QListWidget { background: @panel; color: @text; border: 1px solid @border; }
+QListWidget::item { color: @text; }
 QListWidget::item:selected { background: @accent; color: @window; }
 """
     q = tpl
