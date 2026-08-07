@@ -8,10 +8,12 @@ from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices, QFontDatabase, QIcon, QKeySequence
 from PySide6.QtNetwork import (QNetworkAccessManager, QNetworkReply,
                                QNetworkRequest)
-from PySide6.QtWidgets import (QApplication, QDialog, QDockWidget, QFileDialog,
+from PySide6.QtWidgets import (QApplication, QComboBox, QDialog, QDialogButtonBox,
+                               QDockWidget, QFileDialog, QFormLayout,
                                QHBoxLayout, QInputDialog, QLabel, QLineEdit,
                                QListWidget, QMainWindow, QMessageBox,
-                               QPlainTextEdit, QSplitter, QVBoxLayout, QWidget)
+                               QPlainTextEdit, QSpinBox, QSplitter,
+                               QVBoxLayout, QWidget)
 
 from .editor import CodeEditor, detect_language
 from .filetree import FileTree
@@ -100,6 +102,8 @@ class OnyxPad(QMainWindow):
         self.filetree = FileTree(self.theme)
         self.filetree.file_activated.connect(self.open_file)
         self.filetree.open_in_new_pane.connect(self.open_in_new_pane)
+        self.filetree.file_renamed.connect(self._on_file_renamed)
+        self.filetree.file_deleted.connect(self._on_file_deleted)
         self.dock = QDockWidget("File Explorer", self)
         self.dock.setObjectName("fileDock")
         self.dock.setWidget(self.filetree)
@@ -210,6 +214,8 @@ class OnyxPad(QMainWindow):
         self._add(m_view, "Perbesar", lambda: self._zoom(1), "Ctrl+=")
         self._add(m_view, "Perkecil", lambda: self._zoom(-1), "Ctrl+-")
         self._add(m_view, "Reset Zoom", lambda: self._zoom_reset(), "Ctrl+0")
+        m_view.addSeparator()
+        self._add(m_view, "Preferensi…", self.show_preferences, "Ctrl+,")
 
         # ---------------- Bantuan
         m_help = mb.addMenu("Bantuan")
@@ -315,6 +321,30 @@ class OnyxPad(QMainWindow):
         self.filetree.set_root(path)
         self.settings["root_folder"] = path
         self.statusBar().showMessage(f"Folder: {path}", 4000)
+
+    def _on_file_renamed(self, old_path, new_path):
+        """Update tab editor yang file-nya di-rename dari sidebar."""
+        import os
+        for pane in self.manager._panes:
+            for ed in pane.editors():
+                if ed.file_path() and os.path.normpath(ed.file_path()) == os.path.normpath(old_path):
+                    ed._file_path = new_path
+                    ed.set_language(__import__('src.editor', fromlist=['detect_language']).detect_language(new_path))
+                    pane._refresh_tab_title(ed)
+        self.statusBar().showMessage(
+            f"Renamed: {os.path.basename(old_path)} → {os.path.basename(new_path)}", 3000)
+
+    def _on_file_deleted(self, path):
+        """Tandai tab editor yang file-nya dihapus dari sidebar."""
+        import os
+        for pane in self.manager._panes:
+            for ed in pane.editors():
+                if ed.file_path() and os.path.normpath(ed.file_path()) == os.path.normpath(path):
+                    ed._file_path = None
+                    ed.document().setModified(True)
+                    pane._refresh_tab_title(ed)
+        self.statusBar().showMessage(
+            f"Dihapus: {os.path.basename(path)} (tab masih terbuka, belum disimpan)", 4000)
 
     def quick_open(self):
         """Buka Cepat — filter nama file di folder yang sedang dibuka."""
@@ -468,6 +498,92 @@ class OnyxPad(QMainWindow):
         ed._update_line_area_width()
         self._refresh_status()
 
+    # ============================================================ preferences
+    def show_preferences(self):
+        """Dialog Preferensi — ubah font, ukuran, dan lebar tab."""
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Preferensi")
+        dlg.setMinimumWidth(360)
+
+        form = QFormLayout()
+        form.setSpacing(12)
+        form.setContentsMargins(16, 16, 16, 8)
+
+        # Font family
+        font_combo = QComboBox()
+        mono_fonts = [
+            "JetBrains Mono", "Cascadia Code", "Fira Code", "Consolas",
+            "DejaVu Sans Mono", "Courier New", "Lucida Console",
+            "Source Code Pro", "Hack", "Inconsolata",
+        ]
+        available = set(QFontDatabase.families())
+        for f in mono_fonts:
+            if f in available:
+                font_combo.addItem(f)
+        # pastikan font saat ini ada di list
+        if self._font_family not in [font_combo.itemText(i)
+                                      for i in range(font_combo.count())]:
+            font_combo.insertItem(0, self._font_family)
+        font_combo.setCurrentText(self._font_family)
+        form.addRow("Font:", font_combo)
+
+        # Font size
+        size_spin = QSpinBox()
+        size_spin.setRange(6, 72)
+        size_spin.setValue(self._font_size)
+        size_spin.setSuffix(" pt")
+        form.addRow("Ukuran font:", size_spin)
+
+        # Tab width
+        tab_spin = QSpinBox()
+        tab_spin.setRange(1, 16)
+        tab_spin.setValue(self._tab_width)
+        tab_spin.setSuffix(" spasi")
+        form.addRow("Lebar tab:", tab_spin)
+
+        # Tombol OK / Batal
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok |
+            QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(dlg.accept)
+        buttons.rejected.connect(dlg.reject)
+
+        vbox = QVBoxLayout(dlg)
+        vbox.addLayout(form)
+        vbox.addWidget(buttons)
+
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        new_family = font_combo.currentText()
+        new_size   = size_spin.value()
+        new_tab    = tab_spin.value()
+
+        changed_font   = new_family != self._font_family
+        changed_size   = new_size   != self._font_size
+        changed_tab    = new_tab    != self._tab_width
+
+        self._font_family = new_family
+        self._font_size   = new_size
+        self._tab_width   = new_tab
+
+        # Terapkan ke semua editor yang sudah terbuka
+        for ed in self.manager.all_editors():
+            if changed_font:
+                ed.set_font_family(new_family)
+            if changed_size:
+                ed.set_font_size(new_size)
+            if changed_tab:
+                ed._tab_width = new_tab
+                from PySide6.QtGui import QFontMetricsF
+                ed.setTabStopDistance(
+                    QFontMetricsF(ed.font()).horizontalAdvance(" ") * new_tab)
+            ed._update_line_area_width()
+
+        self.statusBar().showMessage(
+            f"Preferensi disimpan — font: {new_family} {new_size}pt, "
+            f"tab: {new_tab} spasi", 4000)
+
     # ============================================================ theme
     def apply_theme(self, name):
         if name not in THEMES:
@@ -564,7 +680,7 @@ class OnyxPad(QMainWindow):
         reply.setProperty("manual", manual)
 
     def _on_release_check(self, reply):
-        manual = bool(reply.property("manual") or True)
+        manual = bool(reply.property("manual"))
         if reply.error() == QNetworkReply.NetworkError.NoError:
             try:
                 data = json.loads(bytes(reply.readAll()).decode("utf-8"))

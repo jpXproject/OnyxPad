@@ -6,16 +6,25 @@ pane ke splitter terdekat, atau membungkus pane dalam splitter baru bila orienta
 berbeda (memungkinkan split di dalam split).
 """
 
-from PySide6.QtCore import Qt, QPoint, Signal, QTimer
-from PySide6.QtWidgets import (QMessageBox, QSplitter, QTabWidget, QVBoxLayout,
-                               QWidget)
+from PySide6.QtCore import Qt, QMimeData, QPoint, Signal, QTimer
+from PySide6.QtGui import QDrag
+from PySide6.QtWidgets import (QMessageBox, QSplitter, QTabBar, QTabWidget,
+                               QVBoxLayout, QWidget)
+
+
+# ID unik untuk drag-drop antar pane
+_DRAG_MIME = "application/x-onyxpad-editor"
+
+# Referensi global sementara saat drag berlangsung
+_drag_source_pane   = None
+_drag_source_editor = None
 
 
 class Pane(QTabWidget):
     """Satu wilayah layar berisi beberapa tab editor."""
 
     focused = Signal()
-    empty = Signal()
+    empty   = Signal()
 
     def __init__(self, theme, save_editor=None, parent=None):
         super().__init__(parent)
@@ -29,6 +38,81 @@ class Pane(QTabWidget):
         self.tabCloseRequested.connect(self.close_tab_at)
         self.currentChanged.connect(lambda _idx: self.focused.emit())
 
+        # Aktifkan drag-drop pada tab bar
+        self.tabBar().setAcceptDrops(True)
+        self.tabBar().installEventFilter(self)
+        self.setAcceptDrops(True)
+
+    # --------------------------------------------------------- drag & drop
+    def mousePressEvent(self, event):
+        # Deteksi klik di tab bar untuk memulai drag
+        if event.button() == Qt.MouseButton.LeftButton:
+            tab_idx = self.tabBar().tabAt(event.position().toPoint())
+            if tab_idx >= 0:
+                self._drag_start_tab = tab_idx
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if (event.buttons() & Qt.MouseButton.LeftButton and
+                hasattr(self, '_drag_start_tab') and
+                self._drag_start_tab >= 0):
+            editor = self.widget(self._drag_start_tab)
+            if editor is not None:
+                self._start_tab_drag(editor)
+        super().mouseMoveEvent(event)
+
+    def _start_tab_drag(self, editor):
+        global _drag_source_pane, _drag_source_editor
+        _drag_source_pane   = self
+        _drag_source_editor = editor
+
+        mime = QMimeData()
+        mime.setData(_DRAG_MIME, b"1")
+
+        drag = QDrag(self)
+        drag.setMimeData(mime)
+        drag.exec(Qt.DropAction.MoveAction)
+        self._drag_start_tab = -1
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasFormat(_DRAG_MIME):
+            event.acceptProposedAction()
+
+    def dragMoveEvent(self, event):
+        if event.mimeData().hasFormat(_DRAG_MIME):
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        global _drag_source_pane, _drag_source_editor
+        if not event.mimeData().hasFormat(_DRAG_MIME):
+            return
+        src_pane   = _drag_source_pane
+        src_editor = _drag_source_editor
+        _drag_source_pane   = None
+        _drag_source_editor = None
+
+        if src_editor is None or src_pane is self:
+            event.ignore()
+            return
+
+        # Pindahkan editor dari pane asal ke pane ini
+        src_pane.detach_editor(src_editor)
+        self.add_editor(src_editor)
+        event.acceptProposedAction()
+
+    # --------------------------------------------------------- detach
+    def detach_editor(self, editor):
+        """Lepas editor dari pane ini tanpa menutupnya."""
+        idx = self.indexOf(editor)
+        if idx == -1:
+            return
+        self.removeTab(idx)
+        if editor in self._editors:
+            self._editors.remove(editor)
+        editor.setParent(None)
+        if self.count() == 0:
+            self.empty.emit()
+
     # ------------------------------------------------------------ editors
     def add_editor(self, editor):
         editor.focused.connect(self._on_child_focus)
@@ -37,6 +121,8 @@ class Pane(QTabWidget):
         self.setCurrentIndex(index)
         editor.document().modificationChanged.connect(
             lambda _m, ed=editor: self._update_tab_title(ed))
+        editor.textChanged.connect(
+            lambda ed=editor: self._update_tab_title(ed))
         self._update_tab_title(editor)
         editor.setFocus()
         self.focused.emit()
@@ -47,9 +133,33 @@ class Pane(QTabWidget):
         if idx == -1:
             return
         name = editor.display_name()
-        if editor.document().isModified():
+        modified = editor.document().isModified()
+        if modified:
             name = "● " + name
         self.setTabText(idx, name)
+        self._update_tab_tooltip(editor, idx)
+
+    def _refresh_tab_title(self, editor):
+        """Dipanggil dari luar (misal setelah rename/delete dari filetree)."""
+        self._update_tab_title(editor)
+
+    def _update_tab_tooltip(self, editor, idx):
+        """Tooltip tab: path lengkap + statistik file."""
+        import os
+        path = editor.file_path() or "(belum disimpan)"
+        words, chars = editor.stats()
+        lines = editor.document().blockCount()
+        enc   = editor.set_encoding_name()
+        modified_str = " [belum disimpan]" if editor.document().isModified() else ""
+        tip = (
+            f"{path}{modified_str}\n"
+            f"────────────────────\n"
+            f"Baris   : {lines:,}\n"
+            f"Kata    : {words:,}\n"
+            f"Karakter: {chars:,}\n"
+            f"Encoding: {enc}"
+        )
+        self.setTabToolTip(idx, tip)
 
     def _on_child_focus(self):
         self.focused.emit()

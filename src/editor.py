@@ -962,10 +962,43 @@ def _find_backward(text, start, closer):
 
 
 def _decode(raw):
-    """Deteksi encoding file (BOM, UTF-8, lalu fallback cp1252)."""
+    """Deteksi encoding file secara bertahap:
+    1. BOM (UTF-32, UTF-16, UTF-8-sig) — paling pasti
+    2. Coba UTF-8 murni (encoding paling umum saat ini)
+    3. chardet jika tersedia — deteksi statistik untuk file legacy
+    4. Fallback cp1252 (Windows Latin-1) agar tidak crash
+    """
+    # --- 1. BOM detection (urutan penting: UTF-32 sebelum UTF-16) ---
+    if raw.startswith(b"\x00\x00\xfe\xff"):
+        return raw.decode("utf-32-be", errors="replace"), "utf-32-be"
+    if raw.startswith(b"\xff\xfe\x00\x00"):
+        return raw.decode("utf-32-le", errors="replace"), "utf-32-le"
+    if raw.startswith(b"\xfe\xff"):
+        return raw.decode("utf-16-be", errors="replace"), "utf-16-be"
+    if raw.startswith(b"\xff\xfe"):
+        return raw.decode("utf-16-le", errors="replace"), "utf-16-le"
     if raw.startswith(b"\xef\xbb\xbf"):
         return raw.decode("utf-8-sig"), "utf-8-sig"
+
+    # --- 2. Coba UTF-8 ---
     try:
         return raw.decode("utf-8"), "utf-8"
     except UnicodeDecodeError:
-        return raw.decode("cp1252", errors="replace"), "cp1252"
+        pass
+
+    # --- 3. chardet (opsional — tidak wajib diinstall) ---
+    try:
+        import chardet
+        result = chardet.detect(raw)
+        enc = result.get("encoding") or ""
+        confidence = result.get("confidence") or 0.0
+        if enc and confidence >= 0.70:
+            try:
+                return raw.decode(enc, errors="replace"), enc.lower()
+            except (LookupError, UnicodeDecodeError):
+                pass
+    except ImportError:
+        pass
+
+    # --- 4. Fallback cp1252 ---
+    return raw.decode("cp1252", errors="replace"), "cp1252"
