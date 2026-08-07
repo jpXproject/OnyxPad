@@ -115,14 +115,17 @@ class Pane(QTabWidget):
 
     # ------------------------------------------------------------ editors
     def add_editor(self, editor):
-        editor.focused.connect(self._on_child_focus)
+        if hasattr(editor, 'focused'):
+            editor.focused.connect(self._on_child_focus)
         self._editors.append(editor)
-        index = self.addTab(editor, editor.display_name())
+        disp_name = editor.display_name() if hasattr(editor, 'display_name') else "Tab"
+        index = self.addTab(editor, disp_name)
         self.setCurrentIndex(index)
-        editor.document().modificationChanged.connect(
-            lambda _m, ed=editor: self._update_tab_title(ed))
-        editor.textChanged.connect(
-            lambda ed=editor: self._update_tab_title(ed))
+        if hasattr(editor, 'document'):
+            editor.document().modificationChanged.connect(
+                lambda _m, ed=editor: self._update_tab_title(ed))
+            editor.textChanged.connect(
+                lambda ed=editor: self._update_tab_title(ed))
         self._update_tab_title(editor)
         editor.setFocus()
         self.focused.emit()
@@ -132,8 +135,8 @@ class Pane(QTabWidget):
         idx = self.indexOf(editor)
         if idx == -1:
             return
-        name = editor.display_name()
-        modified = editor.document().isModified()
+        name = editor.display_name() if hasattr(editor, 'display_name') else "Tab"
+        modified = editor.document().isModified() if hasattr(editor, 'document') else False
         if modified:
             name = "● " + name
         self.setTabText(idx, name)
@@ -145,7 +148,10 @@ class Pane(QTabWidget):
 
     def _update_tab_tooltip(self, editor, idx):
         """Tooltip tab: path lengkap + statistik file."""
-        import os
+        if not hasattr(editor, 'document'):
+            path = editor.file_path() if hasattr(editor, 'file_path') else "(preview)"
+            self.setTabToolTip(idx, f"{path}\nMedia Preview")
+            return
         path = editor.file_path() or "(belum disimpan)"
         words, chars = editor.stats()
         lines = editor.document().blockCount()
@@ -171,7 +177,7 @@ class Pane(QTabWidget):
         return list(self._editors)
 
     def any_modified(self):
-        return any(ed.document().isModified() for ed in self._editors)
+        return any(hasattr(ed, 'document') and ed.document().isModified() for ed in self._editors)
 
     # ------------------------------------------------------------- close
     def close_tab_at(self, index):
@@ -179,7 +185,7 @@ class Pane(QTabWidget):
         editor = self.widget(index)
         if editor is None:
             return False
-        if editor.document().isModified():
+        if hasattr(editor, 'document') and editor.document().isModified():
             box = QMessageBox()
             box.setWindowTitle("Perubahan Belum Disimpan")
             box.setIcon(QMessageBox.Icon.Warning)

@@ -12,11 +12,12 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QDialog, QDialogButtonBo
                                QDockWidget, QFileDialog, QFormLayout,
                                QHBoxLayout, QInputDialog, QLabel, QLineEdit,
                                QListWidget, QMainWindow, QMessageBox,
-                               QPlainTextEdit, QSpinBox, QSplitter,
-                               QVBoxLayout, QWidget)
+                               QPlainTextEdit, QPushButton, QSpinBox, QSplitter,
+                               QToolBar, QVBoxLayout, QWidget)
 
 from .editor import CodeEditor, detect_language
 from .filetree import FileTree
+from .media import IMAGE_EXTS, VIDEO_EXTS, ImagePreviewWidget, VideoPreviewWidget
 from .panes import SplitManager
 from .recorder import AsciinemaPlayerDialog
 from .search import SearchBar
@@ -36,6 +37,100 @@ MAX_RECENT = 10
 CODE_EXTS = {".py", ".js", ".ts", ".jsx", ".tsx", ".html", ".css", ".c", ".cpp",
              ".h", ".hpp", ".java", ".json", ".md", ".txt", ".sh", ".yaml",
              ".yml", ".ini", ".cfg", ".log", ".toml", ".xml", ".sql"}
+
+WELCOME_MARKDOWN = r"""\
+# 📌 Selamat Datang di OnyxPad Pro!
+
+OnyxPad adalah editor teks & kode modern berbasis PySide6 (Qt6) dengan sistem *split-panes bertingkat* dan perekam sesi terminal Asciinema terintegrasi.
+
+---
+
+### 🚀 Fitur Unggulan OnyxPad:
+
+1. **Multi-Split Panes Bertingkat (tmux / VS Code Style)**:
+   - Split pane ke kanan (`Ctrl+\\`) atau ke bawah (`Ctrl+'`).
+   - Pindahkan tab editor antar-pane dengan fitur *drag & drop*.
+
+2. **Terminal Interaktif & Asciinema Recorder (Ctrl+Shift+R)**:
+   - Terminal terintegrasi (PowerShell, CMD, Bash) dengan rendering warna ANSI.
+   - Perekam sesi terminal ke format `.cast` v2 (`Ctrl+Shift+R`) yang berjalan secara *multithreaded* (`QThread`).
+   - Pemutar ulang (.cast Player) interaktif bawaan.
+
+3. **Editor Kode Canggih, Multi-Cursor & Preview Media**:
+   - Highlighting sintaksis multi-bahasa (Python, JS, TS, HTML, CSS, C/C++, Java, SQL, JSON, Markdown, dll).
+   - Pengeditan *Multi-Cursor* & *Multi-Selection*.
+   - Preview Gambar & Video otomatis langsung di tab editor saat diklik dari File Explorer.
+
+4. **7 Tema Modern (Dark UI)**:
+   - Pilih tema favorit Anda via menu **Tampilan ➔ Tema** (Catppuccin, Tokyo Night, Dracula, Monokai, Nord, dll).
+
+---
+
+### ⌨️ Pintasan Keyboard Utama:
+
+| Fungsi | Pintasan Keyboard |
+| :--- | :--- |
+| **Tab Baru** | `Ctrl+T` |
+| **Buka Cepat File** | `Ctrl+P` |
+| **Split Pane Kanan** | `Ctrl+\\` |
+| **Split Pane Bawah** | `Ctrl+'` |
+| **Rekam Terminal Asciinema** | `Ctrl+Shift+R` |
+| **Buka/Tutup Terminal** | `Ctrl+\`` |
+| **Komentari / Batal Komentar** | `Ctrl+/` |
+| **Bungkus Kata (Word Wrap)** | `Alt+Z` |
+| **Pergi ke Baris** | `Ctrl+G` |
+
+---
+
+*Mulai menulis atau buka file proyek via `File ➔ Buka File...` (`Ctrl+O`) atau `File ➔ Buka Folder...` (`Ctrl+Shift+O`).*
+"""
+
+
+class UpdateDialog(QDialog):
+    """Dialog Pembaruan / Upgrade bergaya Dark UI modern."""
+
+    def __init__(self, current_ver, latest_ver, release_url, changelog="", theme=None, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(f"Pembaruan Tersedia — {APP_NAME}")
+        self.resize(460, 320)
+        self.theme = theme or {}
+        self.release_url = release_url
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(12)
+
+        lbl_title = QLabel(f"🚀 <h2><b>{APP_NAME} v{latest_ver}</b> Sudah Rilis!</h2>")
+        layout.addWidget(lbl_title)
+
+        lbl_ver = QLabel(f"Versi saat ini: <b>v{current_ver}</b>  ➜  Versi terbaru: <b style='color: #10b981;'>v{latest_ver}</b>")
+        layout.addWidget(lbl_ver)
+
+        txt = QPlainTextEdit(self)
+        txt.setReadOnly(True)
+        txt.setPlainText(changelog or f"Versi baru v{latest_ver} telah tersedia di GitHub!\n\nPembaruan mencakup optimasi performa, perbaikan bug, dan fitur-fitur baru.\nKlik tombol 'Buka Halaman Rilis' untuk mengunduh installer terbaru.")
+        layout.addWidget(txt, 1)
+
+        btn_layout = QHBoxLayout()
+        btn_later = QPushButton("Nanti", self)
+        btn_later.clicked.connect(self.reject)
+        btn_layout.addWidget(btn_later)
+
+        btn_download = QPushButton("✨ Buka Halaman Rilis", self)
+        btn_download.clicked.connect(self.accept)
+        btn_layout.addWidget(btn_download)
+
+        layout.addLayout(btn_layout)
+
+        bg = self.theme.get("editor_bg", "#1e1e2e")
+        fg = self.theme.get("editor_fg", "#cdd6f4")
+        accent = self.theme.get("accent", "#89b4fa")
+        self.setStyleSheet(f"""
+            QDialog {{ background-color: {self.theme.get('bg', '#181825')}; color: {fg}; }}
+            QPlainTextEdit {{ background-color: {bg}; color: {fg}; border: 1px solid #45475a; border-radius: 6px; }}
+            QLabel {{ color: {fg}; }}
+            QPushButton {{ background-color: #313244; color: {fg}; border: 1px solid #45475a; padding: 6px 14px; border-radius: 4px; font-weight: bold; }}
+            QPushButton:hover {{ background-color: #45475a; }}
+        """)
 
 
 def pick_mono_font():
@@ -62,6 +157,7 @@ class OnyxPad(QMainWindow):
         self._font_size = int(self.settings.get("font_size", 12))
         self._tab_width = int(self.settings.get("tab_width", 4))
         self._wrap = bool(self.settings.get("wrap", False))
+        self._language = self.settings.get("language", "id")
         self._untitled_counter = 0
         self._theme_actions = []
 
@@ -73,6 +169,16 @@ class OnyxPad(QMainWindow):
         if layout_node:
             self.manager.restore(layout_node)
         self.manager.ensure_first_pane()
+
+        active_p = self.manager.active_pane()
+        if active_p and active_p.count() == 1:
+            ed = active_p.current_editor()
+            if ed and hasattr(ed, 'toPlainText') and not ed.toPlainText() and not ed.file_path():
+                ed.setPlainText(WELCOME_MARKDOWN)
+                ed._file_path = "📌 Selamat Datang.md"
+                ed.set_language("markdown")
+                ed.document().setModified(False)
+                active_p._refresh_tab_title(ed)
 
         self._refresh_status()
         self.statusBar().showMessage(
@@ -92,6 +198,27 @@ class OnyxPad(QMainWindow):
         self.search_bar = SearchBar(self.theme)
         self.search_bar.set_editor_getter(
             lambda: self.manager.active_editor())
+
+        # Quick Action Toolbar
+        self.toolbar = QToolBar("Aksi Cepat", self)
+        self.toolbar.setMovable(False)
+        self.toolbar.setFloatable(False)
+        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.toolbar)
+
+        self.toolbar.addAction("📄 Tab Baru", self.file_new_tab).setToolTip("Tab Baru (Ctrl+T)")
+        self.toolbar.addAction("📂 Buka File", self.open_file_dialog).setToolTip("Buka File (Ctrl+O)")
+        self.toolbar.addAction("📁 Buka Folder", self.open_folder_dialog).setToolTip("Buka Folder (Ctrl+Shift+O)")
+        self.toolbar.addAction("💾 Simpan", self.save_active).setToolTip("Simpan (Ctrl+S)")
+        self.toolbar.addSeparator()
+        self.toolbar.addAction("➡️ Split Kanan", self.manager.split_right).setToolTip("Split Pane Kanan (Ctrl+\\)")
+        self.toolbar.addAction("⬇️ Split Bawah", self.manager.split_below).setToolTip("Split Pane Bawah (Ctrl+')")
+        self.toolbar.addSeparator()
+        self.toolbar.addAction("🔍 Cari", self.search_bar.show_find).setToolTip("Cari Teks (Ctrl+F)")
+        self.toolbar.addAction("⚡ Buka Cepat", self.quick_open).setToolTip("Buka Cepat (Ctrl+P)")
+        self.toolbar.addSeparator()
+        self.toolbar.addAction("💻 Terminal", lambda: self.terminal_dock.setVisible(not self.terminal_dock.isVisible())).setToolTip("Buka/Tutup Terminal (Ctrl+`)")
+        self.toolbar.addAction("⏺ Rekam Terminal", lambda: self.terminal_dock.terminal_panel.toggle_recording()).setToolTip("Rekam Asciinema (Ctrl+Shift+R)")
+        self.toolbar.addAction("▶ Putar .cast", self.show_asciinema_player).setToolTip("Putar File Rekaman Asciinema")
 
         vbox = QVBoxLayout(central)
         vbox.setContentsMargins(0, 0, 0, 0)
@@ -299,9 +426,21 @@ class OnyxPad(QMainWindow):
             self.open_file(path)
 
     def _file_filters(self):
-        return ("Semua File Pendukung (*.py *.js *.ts *.jsx *.html *.css *.c "
-                "*.cpp *.h *.java *.json *.md *.txt *.sh *.yaml *.yml *.xml "
-                "*.sql *.toml *.ini *.cfg *.log);;Semua File (*.*)")
+        return (
+            "Python Script (*.py);;"
+            "JavaScript File (*.js *.jsx);;"
+            "TypeScript File (*.ts *.tsx);;"
+            "HTML Document (*.html *.htm);;"
+            "CSS Stylesheet (*.css);;"
+            "C/C++ Source (*.c *.cpp *.h *.hpp);;"
+            "Java Source (*.java);;"
+            "JSON File (*.json);;"
+            "Markdown Document (*.md);;"
+            "SQL Script (*.sql);;"
+            "Shell Script (*.sh *.bash);;"
+            "Plain Text (*.txt);;"
+            "Semua File (*.*)"
+        )
 
     def open_file(self, path, new_pane=False):
         if not path or not os.path.isfile(path):
@@ -309,24 +448,35 @@ class OnyxPad(QMainWindow):
         # jika file sudah terbuka, fokuskan tab-nya
         for pane in self.manager._panes:
             for ed in pane.editors():
-                if ed.file_path() and os.path.normpath(ed.file_path()) == os.path.normpath(path):
+                ed_path = ed.file_path() if hasattr(ed, 'file_path') else None
+                if ed_path and os.path.normpath(ed_path) == os.path.normpath(path):
                     pane.setCurrentWidget(ed)
-                    ed.setFocus()
+                    if hasattr(ed, 'setFocus'):
+                        ed.setFocus()
                     return ed
-        ed = self._make_editor()
-        ok, err = ed.load(path)
-        if not ok:
-            QMessageBox.warning(self, "Gagal Membuka",
-                                f"Tidak dapat membaca:\n{path}\n\n{err}")
-            ed.deleteLater()
-            return None
-        if new_pane:
-            self.manager.new_pane(ed)
+
+        ext = os.path.splitext(path)[1].lower()
+        if ext in IMAGE_EXTS:
+            widget = ImagePreviewWidget(path, theme=self.theme)
+        elif ext in VIDEO_EXTS:
+            widget = VideoPreviewWidget(path, theme=self.theme)
         else:
-            self.manager.active_pane().add_editor(ed)
+            ed = self._make_editor()
+            ok, err = ed.load(path)
+            if not ok:
+                QMessageBox.warning(self, "Gagal Membuka",
+                                    f"Tidak dapat membaca:\n{path}\n\n{err}")
+                ed.deleteLater()
+                return None
+            widget = ed
+
+        if new_pane:
+            self.manager.new_pane(widget)
+        else:
+            self.manager.active_pane().add_editor(widget)
         self._add_recent(path)
         self._refresh_status()
-        return ed
+        return widget
 
     def open_in_new_pane(self, path):
         self.open_file(path, new_pane=True)
@@ -717,22 +867,9 @@ class OnyxPad(QMainWindow):
                         f"Pembaruan tersedia: v{latest} — menu Bantuan → "
                         "Repositori GitHub", 8000)
                     if self._update_manual:
-                        box = QMessageBox(self)
-                        box.setWindowTitle("Pembaruan Tersedia")
-                        box.setIcon(QMessageBox.Icon.Information)
-                        box.setText(f"<b>{APP_NAME} v{latest}</b> sudah rilis!")
-                        box.setInformativeText(
-                            f"Anda menjalankan v{APP_VERSION}.\n"
-                            "Kunjungi halaman rilis untuk mengunduh versi baru.")
-                        open_btn = box.addButton(
-                            "Buka Halaman Rilis",
-                            QMessageBox.ButtonRole.AcceptRole)
-                        box.addButton("Nanti",
-                                      QMessageBox.ButtonRole.RejectRole)
-                        box.exec()
-                        if box.clickedButton() is open_btn:
-                            self._open_url(data.get("html_url")
-                                           or APP_REPO_URL)
+                        dlg = UpdateDialog(APP_VERSION, latest, data.get("html_url") or APP_REPO_URL, data.get("body", ""), theme=self.theme, parent=self)
+                        if dlg.exec() == QDialog.DialogCode.Accepted:
+                            self._open_url(dlg.release_url)
                 elif manual:
                     self.statusBar().showMessage(
                         f"{APP_NAME} sudah versi terbaru (v{APP_VERSION}).",
