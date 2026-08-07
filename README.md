@@ -48,6 +48,10 @@ split panes, and theme switching.*
 
 OnyxPad includes an integrated terminal (`Ctrl+\``) with full ANSI color support (PowerShell, CMD, Bash) and a built-in **Asciinema Recorder (`Ctrl+Shift+R`)**. Recorded terminal sessions are saved in standard `.cast` v2 format and can be played back using the built-in **Asciinema Player**!
 
+<p align="center">
+  <img src="docs/demo/terminal-asciinema.gif" alt="OnyxPad — Embedded Terminal & Asciinema Recorder Demo" width="100%">
+</p>
+
 Sample asciinema cast recording: [`docs/demo/onyxpad_terminal_demo.cast`](docs/demo/onyxpad_terminal_demo.cast)
 
 ### Split panes
